@@ -1,15 +1,16 @@
-# Fast-Horse-2026 - YouTube Video Downloader
+# Fast-Horse-2026 - Video Resource Downloader
 
-![Fast-Horse-2026](https://img.shields.io/badge/Fast--Horse--2026-YouTube%20Downloader-blue)
+![Fast-Horse-2026](https://img.shields.io/badge/Fast--Horse--2026-Video%20Downloader-blue)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-green)
 ![PySide6](https://img.shields.io/badge/GUI-PySide6-orange)
 ![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20Windows%20%7C%20macOS-lightgrey)
 
-A powerful, feature-rich desktop application for downloading YouTube videos with a modern PySide6 interface, bilingual support, and advanced configuration options.
+A powerful, feature-rich desktop application for downloading videos from YouTube, Bilibili, and other platforms with a modern PySide6 interface, bilingual support, and advanced configuration options.
 
 ## ✨ **Features**
 
 ### **Core Features**
+- **Multi-Platform Support**: Download videos from YouTube, Bilibili (B站), and more
 - **Modern GUI**: Clean, professional interface with dark/light theme support
 - **Video Preview**: Fetch and display video information (title, duration, uploader, views)
 - **Multiple Formats**: Download in various qualities (1080p, 720p, 480p, MP3 audio)
@@ -71,9 +72,14 @@ For MP4 downloads with audio, install FFmpeg:
 
 ## 🎮 **Usage**
 
+### **Supported Platforms**
+- **YouTube**: Full support with format selection and playlist download
+- **Bilibili (B站)**: Full support with smart format detection
+- **Other Platforms**: yt-dlp supported platforms
+
 ### **Basic Usage**
 1. **Launch** the application
-2. **Paste YouTube URL** in the input field
+2. **Paste video URL** (YouTube or Bilibili) in the input field
 3. **Click "Fetch Info"** to load video details
 4. **Select format** from dropdown
 5. **Choose download folder** (optional)
@@ -116,7 +122,13 @@ The application features a modern tab-based interface:
   - **Language Section**: Switch between English/中文
   - **Theme Section**: Toggle between Dark/Light themes
   - **Proxy Settings**: Configure SOCKS5/HTTP/No proxy
-  - **About Section**: Author info (Zengkai001@qq.com) and version (0.0.1)
+  - **About Section**: Author info (Zengkai001@qq.com), version (0.0.2), and application logo
+
+### **Bilibili Support**
+- Automatic URL detection for Bilibili videos
+- Smart format selection (`bestvideo+bestaudio`) for optimal downloads
+- Extended timeout for larger Bilibili videos
+- Requires Firefox cookies for access (login in Firefox first)
 
 ### **Proxy Settings**
 Configure proxy through Settings tab → Proxy Settings:
@@ -162,10 +174,16 @@ pip install pyinstaller
 ## 🐛 **Troubleshooting**
 
 ### **Common Issues**
-1. **"YouTube bot detection"**: Log into YouTube in browser first, app uses browser cookies
+1. **"Bot detection"**: Log into the video site in browser first, app uses browser cookies
 2. **"No video formats"**: Install Deno for JavaScript challenge solving
 3. **"Network error"**: Check proxy settings or try without proxy
 4. **"FFmpeg not found"**: Install FFmpeg for MP4 with audio
+5. **Bilibili HTTP 412**: Ensure Firefox is logged into Bilibili, cookies required
+
+### **Bilibili Specific**
+- **Cookies Required**: Bilibili requires Firefox cookies for access
+- **Login First**: Open Bilibili in Firefox and log in before using the app
+- **Extended Timeout**: Bilibili videos may take longer to fetch (25s timeout)
 
 ### **Deno Installation (for JS challenges)**
 ```bash
@@ -229,14 +247,21 @@ python main.py
 ```
 
 ### **使用说明**
-1. **主界面标签页**: 粘贴YouTube链接，获取视频信息，选择格式，下载视频
+1. **主界面标签页**: 粘贴视频链接（YouTube或B站），获取视频信息，选择格式，下载视频
 2. **设置标签页**: 
    - **语言设置**: 切换英文/中文界面
    - **主题设置**: 切换深色/浅色主题
    - **代理设置**: 配置SOCKS5/HTTP代理
-   - **关于信息**: 作者Zengkai001@qq.com，版本0.0.1
+   - **关于信息**: 作者Zengkai001@qq.com，版本0.0.2，应用图标
+
+### **B站支持**
+- **自动检测**: 自动识别B站视频链接
+- **智能格式**: 自动选择最佳格式（bestvideo+bestaudio）
+- **延长超时**: B站视频较大，获取时间更长（25秒超时）
+- **需要Cookies**: B站需要Firefox登录cookie
 
 ### **功能特点**
+- **多平台支持**: 支持YouTube、B站( Bilibili)等主流视频平台
 - **现代化标签界面**: 主界面/设置标签页布局，操作更直观
 - **双语支持**: 完整的中文/英文界面，实时切换
 - **代理配置**: 支持SOCKS5/HTTP代理，解决网络限制
@@ -244,10 +269,16 @@ python main.py
 - **播放列表支持**: 下载整个播放列表，自动创建文件夹
 
 ### **常见问题**
-1. **"YouTube机器人检测"**: 先在浏览器登录YouTube，应用会使用浏览器cookies
+1. **"机器人检测"**: 先在浏览器登录视频网站，应用会使用浏览器cookies
 2. **"没有视频格式"**: 安装Deno解决JavaScript挑战
 3. **"网络错误"**: 检查代理设置或尝试不使用代理
 4. **"FFmpeg未找到"**: 安装FFmpeg以支持带音频的MP4下载
+5. **B站HTTP 412错误**: 确保Firefox已登录B站，需要cookies
+
+### **B站特定问题**
+- **需要Cookies**: B站需要Firefox登录cookie才能访问
+- **先登录**: 使用前请在Firefox中打开B站并登录
+- **延长超时**: B站视频获取可能需要更长时间（25秒超时）
 
 ### **Deno安装（解决JS挑战）**
 ```bash
@@ -259,5 +290,5 @@ export PATH="$HOME/.deno/bin:$PATH"
 ```
 
 ---
-**Fast-Horse-2026** - Fast, feature-rich YouTube video downloader for 2026 and beyond!
-**快马2026** - 为2026及以后设计的快速、功能丰富的YouTube视频下载器！
+**Fast-Horse-2026** - Fast, feature-rich video downloader for YouTube, Bilibili, and more!
+**快马2026** - 为YouTube、B站等设计的快速、功能丰富的视频下载器！
