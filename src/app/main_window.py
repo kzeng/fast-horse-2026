@@ -1,14 +1,13 @@
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QPushButton, 
     QLabel, QComboBox, QProgressBar, QFileDialog, QMessageBox,
-    QMenuBar, QMenu
+    QTabWidget, QGroupBox, QRadioButton, QFormLayout, QTextEdit
 )
-from PySide6.QtCore import Qt, QSettings, QTimer
+from PySide6.QtCore import Qt, QSettings, QTimer, Signal
 from PySide6.QtGui import QFont
 import os
 from .download_manager import FetchInfoThread, DownloadThread
 from .translations import translator
-from .settings_dialog import SettingsDialog
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -44,104 +43,37 @@ class MainWindow(QMainWindow):
         # Load stylesheet
         self.load_stylesheet(saved_theme)
         
-        self.setup_ui()
+        self.setup_tabs()
         
         # Clear any previous URL
-        self.url_input.clear()
+        if hasattr(self, 'url_input'):
+            self.url_input.clear()
         
-    def setup_menu_bar(self):
-        """Setup the menu bar with language and theme options"""
-        menu_bar = QMenuBar(self)
+    def setup_tabs(self):
+        """Setup the tab widget with Main and Settings tabs"""
+        self.tab_widget = QTabWidget()
         
-        # File menu
-        file_menu = menu_bar.addMenu(translator.get('menu_file'))
-        exit_action = file_menu.addAction(translator.get('menu_exit'))
-        exit_action.triggered.connect(self.close)
+        # Create tabs
+        self.main_tab = self.create_main_tab()
+        self.settings_tab = self.create_settings_tab()
         
-        # Settings menu
-        settings_menu = menu_bar.addMenu(translator.get('menu_settings'))
+        # Add tabs to tab widget
+        self.tab_widget.addTab(self.main_tab, translator.get('tab_main'))
+        self.tab_widget.addTab(self.settings_tab, translator.get('tab_settings'))
         
-        # Proxy settings action
-        proxy_action = settings_menu.addAction("Proxy Settings")
-        proxy_action.triggered.connect(self.show_proxy_settings)
+        # Set tab widget as central widget
+        self.setCentralWidget(self.tab_widget)
         
-        settings_menu.addSeparator()
-        
-        # Language submenu
-        language_menu = settings_menu.addMenu(translator.get('menu_language'))
-        self.english_action = language_menu.addAction(translator.get('menu_english'))
-        self.chinese_action = language_menu.addAction(translator.get('menu_chinese'))
-        
-        self.english_action.triggered.connect(lambda: self.change_language('en'))
-        self.chinese_action.triggered.connect(lambda: self.change_language('zh'))
-        
-        # Theme submenu
-        theme_menu = settings_menu.addMenu(translator.get('menu_theme'))
-        self.dark_action = theme_menu.addAction(translator.get('menu_dark'))
-        self.light_action = theme_menu.addAction(translator.get('menu_light'))
-        
-        # Make theme actions checkable
-        self.dark_action.setCheckable(True)
-        self.light_action.setCheckable(True)
-        
-        # Set initial check state based on saved theme
-        saved_theme = self.settings.value("theme", "dark")
-        self.dark_action.setChecked(saved_theme == 'dark')
-        self.light_action.setChecked(saved_theme == 'light')
-        
-        self.dark_action.triggered.connect(lambda: self.change_theme('dark'))
-        self.light_action.triggered.connect(lambda: self.change_theme('light'))
-        
-        # Help menu
-        help_menu = menu_bar.addMenu(translator.get('menu_help'))
-        about_action = help_menu.addAction(translator.get('menu_about'))
-        about_action.triggered.connect(self.show_about)
-        
-        # Set menu bar
-        self.setMenuBar(menu_bar)
-        
-    def change_language(self, lang_code):
-        """Change application language"""
-        if translator.set_language(lang_code):
-            self.update_ui_text()
-            # Update menu text
-            self.update_menu_text()
-            
-    def update_menu_text(self):
-        """Update menu text when language changes"""
-        # This would need to be implemented if we store menu references
-        pass
-        
-    def show_proxy_settings(self):
-        """Show proxy settings dialog"""
-        dialog = SettingsDialog(self)
-        dialog.exec()
-        
-    def show_about(self):
-        """Show about dialog"""
-        QMessageBox.information(self, 
-                              translator.get('about_title'),
-                              f"{translator.get('about_description')}\n\n{translator.get('about_version')}")
-        
-    def setup_ui(self):
-        # Create central widget for QMainWindow
-        central_widget = QWidget()
-        self.setCentralWidget(central_widget)
-        
-        # Create main layout
-        main_layout = QVBoxLayout(central_widget)
-        main_layout.setSpacing(10)
-        main_layout.setContentsMargins(20, 20, 20, 20)
-        
-        # Menu Bar
-        self.setup_menu_bar()
-        
-        # Content layout
-        layout = QVBoxLayout()
+    def create_main_tab(self):
+        """Create the main downloader tab"""
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
         layout.setSpacing(10)
+        layout.setContentsMargins(20, 20, 20, 20)
         
         # Title
         title_label = QLabel(translator.get('title_label'))
+        title_label.setObjectName("title_label")
         title_font = QFont()
         title_font.setPointSize(16)
         title_font.setBold(True)
@@ -169,16 +101,8 @@ class MainWindow(QMainWindow):
         
         # Preview Section
         self.preview_label = QLabel(translator.get('preview_label'))
+        self.preview_label.setObjectName("preview_label")
         self.preview_label.setAlignment(Qt.AlignCenter)
-        self.preview_label.setStyleSheet("""
-            QLabel {
-                background-color: #2d2d2d;
-                border: 1px solid #3d3d3d;
-                border-radius: 8px;
-                padding: 20px;
-                margin: 10px 0;
-            }
-        """)
         layout.addWidget(self.preview_label)
         
         # Format Selection
@@ -198,6 +122,7 @@ class MainWindow(QMainWindow):
         
         # Folder selection
         self.folder_btn = QPushButton("📁")
+        self.folder_btn.setObjectName("folder_btn")
         self.folder_btn.setToolTip(translator.get('folder_btn'))
         self.folder_btn.setMinimumHeight(35)
         self.folder_btn.clicked.connect(self.select_folder)
@@ -219,15 +144,205 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.progress_bar)
         
         self.status_label = QLabel(translator.get('status_ready'))
+        self.status_label.setObjectName("status_label")
         self.status_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(self.status_label)
         
         # Spacer
         layout.addStretch()
         
-        # Add content layout to main layout
-        main_layout.addLayout(layout)
+        return tab
+    
+    def create_settings_tab(self):
+        """Create the settings tab with language, theme, proxy, and about sections"""
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        layout.setSpacing(15)
+        layout.setContentsMargins(20, 20, 20, 20)
         
+        # Language Section
+        self.language_group = QGroupBox(translator.get('settings_language'))
+        language_layout = QVBoxLayout()
+        
+        self.english_radio = QRadioButton(translator.get('language_english'))
+        self.chinese_radio = QRadioButton(translator.get('language_chinese'))
+        
+        # Set current language
+        current_lang = translator.current_lang
+        self.english_radio.setChecked(current_lang == 'en')
+        self.chinese_radio.setChecked(current_lang == 'zh')
+        
+        self.english_radio.clicked.connect(lambda: self.change_language('en'))
+        self.chinese_radio.clicked.connect(lambda: self.change_language('zh'))
+        
+        language_layout.addWidget(self.english_radio)
+        language_layout.addWidget(self.chinese_radio)
+        self.language_group.setLayout(language_layout)
+        layout.addWidget(self.language_group)
+        
+        # Theme Section
+        self.theme_group = QGroupBox(translator.get('settings_theme'))
+        theme_layout = QVBoxLayout()
+        
+        self.dark_radio = QRadioButton(translator.get('theme_dark'))
+        self.light_radio = QRadioButton(translator.get('theme_light'))
+        
+        # Set current theme
+        saved_theme = self.settings.value("theme", "dark")
+        self.dark_radio.setChecked(saved_theme == 'dark')
+        self.light_radio.setChecked(saved_theme == 'light')
+        
+        self.dark_radio.clicked.connect(lambda: self.change_theme('dark'))
+        self.light_radio.clicked.connect(lambda: self.change_theme('light'))
+        
+        theme_layout.addWidget(self.dark_radio)
+        theme_layout.addWidget(self.light_radio)
+        self.theme_group.setLayout(theme_layout)
+        layout.addWidget(self.theme_group)
+        
+        # Proxy Settings Section
+        self.proxy_group = QGroupBox(translator.get('settings_proxy'))
+        proxy_layout = QFormLayout()
+        
+        # Proxy type
+        self.proxy_type_combo = QComboBox()
+        self.proxy_type_combo.addItems([
+            translator.get('settings_proxy_none'),
+            translator.get('settings_proxy_socks5'),
+            translator.get('settings_proxy_http')
+        ])
+        proxy_layout.addRow(translator.get('settings_proxy_type') + ":", self.proxy_type_combo)
+        
+        # Proxy host
+        self.proxy_host_input = QLineEdit()
+        self.proxy_host_input.setPlaceholderText("127.0.0.1")
+        proxy_layout.addRow(translator.get('settings_proxy_host'), self.proxy_host_input)
+        
+        # Proxy port
+        self.proxy_port_input = QLineEdit()
+        self.proxy_port_input.setPlaceholderText("10808")
+        proxy_layout.addRow(translator.get('settings_proxy_port'), self.proxy_port_input)
+        
+        # Save proxy button
+        self.save_proxy_btn = QPushButton(translator.get('settings_save'))
+        self.save_proxy_btn.clicked.connect(self.save_proxy_settings)
+        proxy_layout.addRow("", self.save_proxy_btn)
+        
+        self.proxy_group.setLayout(proxy_layout)
+        layout.addWidget(self.proxy_group)
+        
+        # About Section
+        self.about_group = QGroupBox(translator.get('settings_about'))
+        about_layout = QVBoxLayout()
+        
+        self.about_text = QTextEdit()
+        self.about_text.setReadOnly(True)
+        self.about_text.setPlainText(
+            f"{translator.get('about_description')}\n\n"
+            f"{translator.get('about_author')}\n"
+            f"{translator.get('about_version')}"
+        )
+        self.about_text.setMaximumHeight(120)
+        
+        about_layout.addWidget(self.about_text)
+        self.about_group.setLayout(about_layout)
+        layout.addWidget(self.about_group)
+        
+        # Spacer
+        layout.addStretch()
+        
+        # Load current proxy settings
+        self.load_proxy_settings()
+        
+        return tab
+    
+    def change_language(self, lang_code):
+        """Change application language"""
+        if translator.set_language(lang_code):
+            # Update tab titles
+            self.tab_widget.setTabText(0, translator.get('tab_main'))
+            self.tab_widget.setTabText(1, translator.get('tab_settings'))
+            
+            # Update UI text
+            self.update_ui_text()
+            
+            # Update settings tab content
+            self.update_settings_tab()
+    
+    def change_theme(self, theme):
+        """Change application theme"""
+        self.load_stylesheet(theme)
+        
+        # Update theme radio buttons
+        if hasattr(self, 'dark_radio') and hasattr(self, 'light_radio'):
+            self.dark_radio.setChecked(theme == 'dark')
+            self.light_radio.setChecked(theme == 'light')
+    
+    def load_proxy_settings(self):
+        """Load current proxy settings from QSettings"""
+        proxy_type = self.settings.value("proxy_type", translator.get('settings_proxy_socks5'))
+        proxy_host = self.settings.value("proxy_host", "127.0.0.1")
+        proxy_port = self.settings.value("proxy_port", "10808")
+        
+        # Set proxy type
+        if proxy_type == translator.get('settings_proxy_none'):
+            self.proxy_type_combo.setCurrentIndex(0)
+        elif proxy_type == translator.get('settings_proxy_socks5'):
+            self.proxy_type_combo.setCurrentIndex(1)
+        elif proxy_type == translator.get('settings_proxy_http'):
+            self.proxy_type_combo.setCurrentIndex(2)
+        
+        self.proxy_host_input.setText(proxy_host)
+        self.proxy_port_input.setText(proxy_port)
+    
+    def save_proxy_settings(self):
+        """Save proxy settings to QSettings"""
+        proxy_type = self.proxy_type_combo.currentText()
+        proxy_host = self.proxy_host_input.text().strip()
+        proxy_port = self.proxy_port_input.text().strip()
+        
+        # Validate port
+        if proxy_type != translator.get('settings_proxy_none'):
+            if not proxy_host:
+                QMessageBox.warning(self, "Warning", "Please enter proxy host")
+                return
+            if not proxy_port:
+                QMessageBox.warning(self, "Warning", "Please enter proxy port")
+                return
+            try:
+                port = int(proxy_port)
+                if port < 1 or port > 65535:
+                    raise ValueError
+            except ValueError:
+                QMessageBox.warning(self, "Warning", "Please enter a valid port number (1-65535)")
+                return
+        
+        # Save settings
+        self.settings.setValue("proxy_type", proxy_type)
+        self.settings.setValue("proxy_host", proxy_host)
+        self.settings.setValue("proxy_port", proxy_port)
+        
+        QMessageBox.information(self, "Success", "Proxy settings saved successfully")
+    
+    def update_settings_tab(self):
+        """Update settings tab content when language changes"""
+        if hasattr(self, 'language_group'):
+            self.language_group.setTitle(translator.get('settings_language'))
+            self.english_radio.setText(translator.get('language_english'))
+            self.chinese_radio.setText(translator.get('language_chinese'))
+            
+            self.theme_group.setTitle(translator.get('settings_theme'))
+            self.dark_radio.setText(translator.get('theme_dark'))
+            self.light_radio.setText(translator.get('theme_light'))
+            
+            self.proxy_group.setTitle(translator.get('settings_proxy'))
+            self.save_proxy_btn.setText(translator.get('settings_save'))
+            
+            self.about_group.setTitle(translator.get('settings_about'))
+            about_text = f"{translator.get('about_description')}\n\n{translator.get('about_author')}\n{translator.get('about_version')}"
+            if hasattr(self, 'about_text'):
+                self.about_text.setPlainText(about_text)
+    
     def load_stylesheet(self, theme='dark'):
         """Load the application stylesheet"""
         if theme == 'dark':
@@ -235,7 +350,10 @@ class MainWindow(QMainWindow):
         else:
             style_file = 'style_light.qss'
             
-        style_path = os.path.join(os.path.dirname(__file__), style_file)
+        # Get the directory of this module
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        style_path = os.path.join(current_dir, style_file)
+        
         if os.path.exists(style_path):
             with open(style_path, 'r') as f:
                 self.setStyleSheet(f.read())
@@ -243,21 +361,7 @@ class MainWindow(QMainWindow):
         # Save theme preference
         self.settings.setValue("theme", theme)
     
-    def change_theme(self, theme):
-        """Change application theme"""
-        self.load_stylesheet(theme)
-        
-        # Update theme menu check state
-        if hasattr(self, 'dark_action') and hasattr(self, 'light_action'):
-            # Uncheck both first
-            self.dark_action.setChecked(False)
-            self.light_action.setChecked(False)
-            
-            # Check the selected theme
-            if theme == 'dark':
-                self.dark_action.setChecked(True)
-            else:
-                self.light_action.setChecked(True)
+
         
     def fetch_video_info(self):
         url = self.url_input.text().strip()
@@ -448,6 +552,11 @@ class MainWindow(QMainWindow):
             translator.get('progress_completing')
         ]
         
+        # Update tab titles
+        if hasattr(self, 'tab_widget'):
+            self.tab_widget.setTabText(0, translator.get('tab_main'))
+            self.tab_widget.setTabText(1, translator.get('tab_settings'))
+        
         # Find and update all widgets
         for widget in self.findChildren(QLabel):
             if widget.text() in ["YouTube Video Downloader", "YouTube URL:", "Format:", "Ready"]:
@@ -481,39 +590,5 @@ class MainWindow(QMainWindow):
         if self.preview_label.text() == "No video loaded":
             self.preview_label.setText(translator.get('preview_label'))
         
-        # Update menu bar if it exists
-        menu_bar = self.menuBar()
-        if menu_bar:
-            # Update File menu
-            file_menu = menu_bar.actions()[0].menu()
-            if file_menu:
-                file_menu.setTitle(translator.get('menu_file'))
-                file_menu.actions()[0].setText(translator.get('menu_exit'))
-            
-            # Update Settings menu
-            settings_menu = menu_bar.actions()[1].menu()
-            if settings_menu:
-                settings_menu.setTitle(translator.get('menu_settings'))
-                
-                # Update Proxy Settings action
-                settings_menu.actions()[0].setText("Proxy Settings")
-                
-                # Update Language submenu
-                language_menu = settings_menu.actions()[2].menu()
-                if language_menu:
-                    language_menu.setTitle(translator.get('menu_language'))
-                    language_menu.actions()[0].setText(translator.get('menu_english'))
-                    language_menu.actions()[1].setText(translator.get('menu_chinese'))
-                
-                # Update Theme submenu
-                theme_menu = settings_menu.actions()[3].menu()
-                if theme_menu:
-                    theme_menu.setTitle(translator.get('menu_theme'))
-                    theme_menu.actions()[0].setText(translator.get('menu_dark'))
-                    theme_menu.actions()[1].setText(translator.get('menu_light'))
-            
-            # Update Help menu
-            help_menu = menu_bar.actions()[2].menu()
-            if help_menu:
-                help_menu.setTitle(translator.get('menu_help'))
-                help_menu.actions()[0].setText(translator.get('menu_about'))
+        # Update settings tab
+        self.update_settings_tab()

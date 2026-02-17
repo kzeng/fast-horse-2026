@@ -20,18 +20,28 @@ class Translator:
             # Window title
             'window_title': "Fast Horse 2026 - YouTube Downloader",
             
-            # Menu
-            'menu_file': "File",
-            'menu_settings': "Settings",
-            'menu_language': "Language",
-            'menu_theme': "Theme",
-            'menu_help': "Help",
-            'menu_exit': "Exit",
-            'menu_english': "English",
-            'menu_chinese': "中文",
-            'menu_dark': "Dark",
-            'menu_light': "Light",
-            'menu_about': "About",
+            # Tabs
+            'tab_main': "Main",
+            'tab_settings': "Settings",
+            
+            # Settings tab sections
+            'settings_language': "Language",
+            'settings_theme': "Theme",
+            'settings_proxy': "Proxy Settings",
+            'settings_about': "About",
+            
+            # Language options
+            'language_english': "English",
+            'language_chinese': "中文",
+            
+            # Theme options
+            'theme_dark': "Dark",
+            'theme_light': "Light",
+            
+            # About section
+            'about_author': "Author: Zengkai001@qq.com",
+            'about_version': "Version: 0.0.1",
+            'about_description': "A fast YouTube video downloader with proxy support",
             
             # Main UI
             'title_label': "Fast Horse 2026 - YouTube Downloader",
@@ -81,10 +91,8 @@ class Translator:
             'settings_save': "Save",
             'settings_cancel': "Cancel",
             
-            # About
+            # About (old - keeping for compatibility)
             'about_title': "About Fast Horse 2026",
-            'about_version': "Version 1.0",
-            'about_description': "A fast YouTube video downloader with proxy support",
             'about_github': "GitHub Repository",
             
             # Video info
@@ -100,18 +108,28 @@ class Translator:
             # Window title
             'window_title': "快马2026 - YouTube下载器",
             
-            # Menu
-            'menu_file': "文件",
-            'menu_settings': "设置",
-            'menu_language': "语言",
-            'menu_theme': "主题",
-            'menu_help': "帮助",
-            'menu_exit': "退出",
-            'menu_english': "English",
-            'menu_chinese': "中文",
-            'menu_dark': "深色",
-            'menu_light': "浅色",
-            'menu_about': "关于",
+            # Tabs
+            'tab_main': "主界面",
+            'tab_settings': "设置",
+            
+            # Settings tab sections
+            'settings_language': "语言",
+            'settings_theme': "主题",
+            'settings_proxy': "代理设置",
+            'settings_about': "关于",
+            
+            # Language options
+            'language_english': "English",
+            'language_chinese': "中文",
+            
+            # Theme options
+            'theme_dark': "深色",
+            'theme_light': "浅色",
+            
+            # About section
+            'about_author': "作者: Zengkai001@qq.com",
+            'about_version': "版本: 0.0.1",
+            'about_description': "支持代理的快速YouTube视频下载器",
             
             # Main UI
             'title_label': "快马2026 - YouTube下载器",
@@ -161,10 +179,8 @@ class Translator:
             'settings_save': "保存",
             'settings_cancel': "取消",
             
-            # About
+            # About (old - keeping for compatibility)
             'about_title': "关于快马2026",
-            'about_version': "版本 1.0",
-            'about_description': "支持代理的快速YouTube视频下载器",
             'about_github': "GitHub仓库",
             
             # Video info

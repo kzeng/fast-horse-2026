@@ -19,9 +19,9 @@ A powerful, feature-rich desktop application for downloading YouTube videos with
 
 ### **Advanced Features**
 - **🌐 Bilingual UI**: Full Chinese/English language support with dynamic switching
-- **🔧 Configurable Proxy**: SOCKS5/HTTP proxy support with settings dialog
+- **🔧 Configurable Proxy**: SOCKS5/HTTP proxy support with integrated settings
 - **🎨 Theme Switching**: Dark/Light theme toggle with preference saving
-- **📱 Professional Menu**: File, Settings, Help menus with keyboard shortcuts
+- **📱 Tab Interface**: Modern tab layout (Main/Settings) for better user experience
 - **⚡ Performance**: Multi-threaded downloads with progress tracking
 
 ## 📸 **Screenshots**
@@ -80,9 +80,10 @@ For MP4 downloads with audio, install FFmpeg:
 6. **Click "Download"** to start
 
 ### **Advanced Features**
-- **Language Switch**: Settings → Language → English/中文
-- **Proxy Settings**: Settings → Proxy Settings
-- **Theme Switch**: Settings → Theme → Dark/Light
+- **Language Switch**: Settings tab → Language section → English/中文
+- **Proxy Settings**: Settings tab → Proxy Settings section
+- **Theme Switch**: Settings tab → Theme section → Dark/Light
+- **About Info**: Settings tab → About section with author and version
 - **Playlist Download**: Paste playlist URL, all videos download to playlist folder
 
 ## 🏗️ **Project Structure**
@@ -93,10 +94,9 @@ fast-horse-2026/
 │   ├── main.py                     # Application entry point
 │   └── app/
 │       ├── __init__.py
-│       ├── main_window.py          # Main window UI (QMainWindow)
+│       ├── main_window.py          # Main window UI with tab layout (QMainWindow)
 │       ├── download_manager.py     # yt-dlp integration with proxy support
 │       ├── translations.py         # Bilingual translation system
-│       ├── settings_dialog.py      # Proxy configuration dialog
 │       ├── style.qss               # Dark theme stylesheet
 │       └── style_light.qss         # Light theme stylesheet
 ├── requirements.txt                # Python dependencies
@@ -109,8 +109,17 @@ fast-horse-2026/
 
 ## ⚙️ **Configuration**
 
+### **Tab Interface**
+The application features a modern tab-based interface:
+- **Main Tab**: Video downloader interface (URL input, format selection, progress)
+- **Settings Tab**: All configuration options in one place:
+  - **Language Section**: Switch between English/中文
+  - **Theme Section**: Toggle between Dark/Light themes
+  - **Proxy Settings**: Configure SOCKS5/HTTP/No proxy
+  - **About Section**: Author info (Zengkai001@qq.com) and version (0.0.1)
+
 ### **Proxy Settings**
-Configure proxy through Settings → Proxy Settings:
+Configure proxy through Settings tab → Proxy Settings:
 - **No Proxy**: Direct connection
 - **SOCKS5**: SOCKS5 proxy support
 - **HTTP**: HTTP proxy support
@@ -193,4 +202,62 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ---
 
+## 🇨🇳 **中文文档**
+
+### **快速开始**
+1. **下载预编译版本**: 从发布页面下载 `Fast-Horse-2026-linux-x64.tar.gz`
+2. **解压**: `tar -xzf Fast-Horse-2026-linux-x64.tar.gz`
+3. **运行**: `./Fast-Horse-2026`
+
+### **从源码运行**
+```bash
+# 克隆仓库
+git clone https://gitee.com/kzeng/fast-horse-2026.git
+cd fast-horse-2026
+
+# 创建虚拟环境
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# venv\Scripts\activate   # Windows
+
+# 安装依赖
+pip install -r requirements.txt
+
+# 运行应用
+cd src
+python main.py
+```
+
+### **使用说明**
+1. **主界面标签页**: 粘贴YouTube链接，获取视频信息，选择格式，下载视频
+2. **设置标签页**: 
+   - **语言设置**: 切换英文/中文界面
+   - **主题设置**: 切换深色/浅色主题
+   - **代理设置**: 配置SOCKS5/HTTP代理
+   - **关于信息**: 作者Zengkai001@qq.com，版本0.0.1
+
+### **功能特点**
+- **现代化标签界面**: 主界面/设置标签页布局，操作更直观
+- **双语支持**: 完整的中文/英文界面，实时切换
+- **代理配置**: 支持SOCKS5/HTTP代理，解决网络限制
+- **主题切换**: 深色/浅色主题，保护眼睛
+- **播放列表支持**: 下载整个播放列表，自动创建文件夹
+
+### **常见问题**
+1. **"YouTube机器人检测"**: 先在浏览器登录YouTube，应用会使用浏览器cookies
+2. **"没有视频格式"**: 安装Deno解决JavaScript挑战
+3. **"网络错误"**: 检查代理设置或尝试不使用代理
+4. **"FFmpeg未找到"**: 安装FFmpeg以支持带音频的MP4下载
+
+### **Deno安装（解决JS挑战）**
+```bash
+# 安装Deno
+curl -fsSL https://deno.land/install.sh | sh
+
+# 添加到PATH
+export PATH="$HOME/.deno/bin:$PATH"
+```
+
+---
 **Fast-Horse-2026** - Fast, feature-rich YouTube video downloader for 2026 and beyond!
+**快马2026** - 为2026及以后设计的快速、功能丰富的YouTube视频下载器！
