@@ -1,0 +1,97 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# PyInstaller
+*.spec
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Build artifacts
+build/
+dist/
+dist_package/
+*.tar.gz
+
+# Test outputs
+test_output/
+final_test_output/
+
+# Python cache
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Configuration files (except those we want to track)
+*.cfg
+*.ini
+
+# Executables (except our main one)
+*.exe
+!dist/Fast-Horse-2026
+
+# PyInstaller
+*.spec
+*.pkg
+
+# Project specific
+YTDownloader-linux-x64.tar.gz
+Fast-Horse-2026-linux-x64.tar.gz
+
+# Debug files
+debug_*.py
+test_*.py
+
+# User settings
+.settings/
+.project

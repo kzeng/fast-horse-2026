@@ -1,0 +1,142 @@
+/* Dark theme for YouTube Downloader */
+
+QWidget {
+    background-color: #1e1e1e;
+    color: #ffffff;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 14px;
+}
+
+/* Title */
+QLabel[objectName^="title"] {
+    font-size: 18px;
+    font-weight: bold;
+    color: #ffffff;
+    padding: 10px;
+}
+
+/* Input fields */
+QLineEdit {
+    background-color: #2d2d2d;
+    border: 1px solid #3d3d3d;
+    border-radius: 6px;
+    padding: 8px 12px;
+    selection-background-color: #0078d4;
+}
+
+QLineEdit:focus {
+    border: 1px solid #0078d4;
+    outline: none;
+}
+
+QLineEdit::placeholder {
+    color: #888888;
+}
+
+/* Buttons */
+QPushButton {
+    background-color: #0078d4;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 20px;
+    font-weight: bold;
+    color: white;
+}
+
+QPushButton:hover {
+    background-color: #1084d8;
+}
+
+QPushButton:pressed {
+    background-color: #006cbd;
+}
+
+QPushButton:disabled {
+    background-color: #555555;
+    color: #888888;
+}
+
+/* Folder button */
+QPushButton#folder_btn {
+    background-color: #555555;
+    padding: 10px;
+    font-size: 16px;
+}
+
+QPushButton#folder_btn:hover {
+    background-color: #666666;
+}
+
+/* Combo box */
+QComboBox {
+    background-color: #2d2d2d;
+    border: 1px solid #3d3d3d;
+    border-radius: 6px;
+    padding: 8px 12px;
+    min-width: 150px;
+}
+
+QComboBox::drop-down {
+    border: none;
+    width: 30px;
+}
+
+QComboBox::down-arrow {
+    image: none;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid #ffffff;
+    margin-right: 10px;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #2d2d2d;
+    border: 1px solid #3d3d3d;
+    selection-background-color: #0078d4;
+    selection-color: white;
+}
+
+/* Progress bar */
+QProgressBar {
+    border: 1px solid #3d3d3d;
+    border-radius: 6px;
+    text-align: center;
+    background-color: #2d2d2d;
+    height: 25px;
+}
+
+QProgressBar::chunk {
+    background-color: #0078d4;
+    border-radius: 5px;
+}
+
+/* Labels */
+QLabel {
+    color: #ffffff;
+}
+
+/* Preview area */
+QLabel#preview_label {
+    background-color: #2d2d2d;
+    border: 1px solid #3d3d3d;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 10px 0;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* Status label */
+QLabel#status_label {
+    color: #aaaaaa;
+    font-style: italic;
+}
+
+/* Layout spacing */
+QVBoxLayout {
+    spacing: 15px;
+}
+
+QHBoxLayout {
+    spacing: 10px;
+}
