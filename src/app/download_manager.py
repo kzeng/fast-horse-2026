@@ -245,7 +245,7 @@ class FetchInfoThread(QThread):
             if 'challenge solving failed' in error_str or 'n challenge' in error_str:
                 if not deno_available:
                     error_msg = (
-                        "YouTube requires JavaScript challenge solving.\n\n"
+                        "The video site requires JavaScript challenge solving.\n\n"
                         "Deno runtime is not available in PATH.\n"
                         "Solution:\n"
                         "1. Install Deno: curl -fsSL https://deno.land/install.sh | sh\n"
@@ -254,33 +254,33 @@ class FetchInfoThread(QThread):
                     )
                 else:
                     error_msg = (
-                        "YouTube JS challenge solving failed.\n\n"
+                        "JavaScript challenge solving failed.\n\n"
                         "Deno is installed but yt-dlp can't use it.\n"
                         "Try: pip install yt-dlp-ejs"
                     )
             elif 'Requested format is not available' in error_str:
                 if not deno_available:
                     error_msg = (
-                        "YouTube served restricted content (tv downgraded API).\n\n"
-                        "With Firefox cookies + Clash VPN, YouTube only serves images.\n"
+                        "The video site served restricted content.\n\n"
+                        "With Firefox cookies + Clash VPN, the site may only serve images.\n"
                         "Solution:\n"
                         "1. Install Deno: curl -fsSL https://deno.land/install.sh | sh\n"
                         "2. The app will automatically detect Deno in ~/.deno/bin/\n"
-                        "3. Deno solves YouTube's JavaScript challenges to get video formats"
+                        "3. Deno solves JavaScript challenges to get video formats"
                     )
                 else:
                     error_msg = (
-                        "YouTube served restricted content (no video formats).\n\n"
+                        "The video site served restricted content (no video formats).\n\n"
                         "This usually means:\n"
-                        "1. YouTube detected bot-like behavior\n"
+                        "1. The site detected bot-like behavior\n"
                         "2. Try refreshing Firefox cookies\n"
                         "3. Wait a few minutes and try again"
                     )
             elif 'Sign in to confirm' in error_str:
                 error_msg = (
-                    "YouTube bot detection.\n\n"
+                    "Bot detection detected.\n\n"
                     "Try:\n"
-                    "1. Use YouTube in Firefox first (refresh cookies)\n"
+                    "1. Use the site in Firefox first (refresh cookies)\n"
                     "2. Wait 5-10 minutes\n"
                     "3. Try a different video"
                 )
@@ -289,7 +289,7 @@ class FetchInfoThread(QThread):
                     "Cannot connect through proxy.\n\n"
                     "Check:\n"
                     "1. Proxy server is running\n"
-                    "2. Firefox can access YouTube\n"
+                    "2. Firefox can access the video site\n"
                     "3. Check proxy settings in the app"
                 )
             else:
@@ -448,4 +448,4 @@ class DownloadThread(QThread):
                 print(f"DEBUG: DownloadThread - Attempt failed: {error_str[:100]}", flush=True)
                 continue
         
-        self.error.emit("Download failed. YouTube may be blocking requests.")
+        self.error.emit("Download failed. The video site may be blocking requests.")

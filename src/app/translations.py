@@ -18,35 +18,35 @@ class Translator:
         """English translations"""
         return {
             # Window title
-            'window_title': "Fast Horse 2026 - YouTube Downloader",
-            
+            'window_title': "Fast Horse 2026 - Resource Downloader",
+
             # Tabs
             'tab_main': "Main",
             'tab_settings': "Settings",
-            
+
             # Settings tab sections
             'settings_language': "Language",
             'settings_theme': "Theme",
             'settings_proxy': "Proxy Settings",
             'settings_about': "About",
-            
+
             # Language options
             'language_english': "English",
             'language_chinese': "中文",
-            
+
             # Theme options
             'theme_dark': "Dark",
             'theme_light': "Light",
-            
+
             # About section
             'about_author': "Author: Zengkai001@qq.com",
-            'about_version': "Version: 0.0.1",
-            'about_description': "A fast YouTube video downloader with proxy support",
-            
+            'about_version': "Version: 0.0.2",
+            'about_description': "A fast video downloader with proxy support for YouTube, Bilibili, and more",
+
             # Main UI
-            'title_label': "Fast Horse 2026 - YouTube Downloader",
-            'url_label': "YouTube URL:",
-            'url_placeholder': "Paste YouTube URL here...",
+            'title_label': "Fast Horse 2026 - Resource Downloader",
+            'url_label': "Resource URL:",
+            'url_placeholder': "Paste YouTube or Bilibili URL here...",
             'fetch_btn': "Fetch Info",
             'preview_label': "No video loaded",
             'format_label': "Format:",
@@ -74,8 +74,8 @@ class Translator:
             'progress_completing': "Almost complete...",
             
             # Error messages
-            'error_no_url': "Please enter a YouTube URL",
-            'error_fetch_first': "Please fetch video info first",
+            'error_no_url': "Please enter a resource URL",
+            'error_fetch_first': "Please fetch resource info first",
             'error_network': "Network error. Check proxy settings.",
             'error_deno': "Deno not found. Install Deno for JS challenges.",
             
@@ -106,35 +106,35 @@ class Translator:
         """Chinese translations"""
         return {
             # Window title
-            'window_title': "快马2026 - YouTube下载器",
-            
+            'window_title': "快马2026 - 资源下载器",
+
             # Tabs
             'tab_main': "主界面",
             'tab_settings': "设置",
-            
+
             # Settings tab sections
             'settings_language': "语言",
             'settings_theme': "主题",
             'settings_proxy': "代理设置",
             'settings_about': "关于",
-            
+
             # Language options
             'language_english': "English",
             'language_chinese': "中文",
-            
+
             # Theme options
             'theme_dark': "深色",
             'theme_light': "浅色",
-            
+
             # About section
             'about_author': "作者: Zengkai001@qq.com",
-            'about_version': "版本: 0.0.1",
-            'about_description': "支持代理的快速YouTube视频下载器",
-            
+            'about_version': "版本: 0.0.2",
+            'about_description': "支持代理的快速视频下载器，支持YouTube、B站等",
+
             # Main UI
-            'title_label': "快马2026 - YouTube下载器",
-            'url_label': "YouTube链接:",
-            'url_placeholder': "粘贴YouTube链接到这里...",
+            'title_label': "快马2026 - 资源下载器",
+            'url_label': "资源链接:",
+            'url_placeholder': "粘贴YouTube或B站链接到这里...",
             'fetch_btn': "获取信息",
             'preview_label': "未加载视频",
             'format_label': "格式:",
@@ -162,7 +162,8 @@ class Translator:
             'progress_completing': "即将完成...",
             
             # Error messages
-            'error_no_url': "请输入YouTube链接",
+            'error_no_url': "请输入资源链接",
+            'error_fetch_first': "请先获取资源信息",
             'error_fetch_first': "请先获取视频信息",
             'error_network': "网络错误。请检查代理设置。",
             'error_deno': "未找到Deno。请安装Deno以解决JS挑战。",

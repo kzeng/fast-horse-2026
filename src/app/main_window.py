@@ -267,17 +267,10 @@ class MainWindow(QMainWindow):
         self.status_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(self.status_label)
         
-        # Horse Image
-        self.horse_image_label = QLabel()
-        self.horse_image_label.setAlignment(Qt.AlignCenter)
-        self.horse_image_label.setObjectName("horse_image_label")
-        layout.addWidget(self.horse_image_label)
-        
-        # Load horse image
-        self.load_horse_image()
-        
         # Spacer
         layout.addStretch()
+        
+        return tab
         
         return tab
     
@@ -361,7 +354,12 @@ class MainWindow(QMainWindow):
         
         # About Section
         self.about_group = QGroupBox(translator.get('settings_about'))
-        about_layout = QVBoxLayout()
+        
+        # Use horizontal layout for about section (text on left, image on right)
+        about_main_layout = QHBoxLayout()
+        
+        # Text on left
+        about_text_layout = QVBoxLayout()
         
         self.about_text = QTextEdit()
         self.about_text.setReadOnly(True)
@@ -371,9 +369,21 @@ class MainWindow(QMainWindow):
             f"{translator.get('about_version')} v{__version__}"
         )
         self.about_text.setMaximumHeight(120)
+        self.about_text.setMaximumWidth(400)
         
-        about_layout.addWidget(self.about_text)
-        self.about_group.setLayout(about_layout)
+        about_text_layout.addWidget(self.about_text)
+        about_main_layout.addLayout(about_text_layout)
+        
+        # Image on right
+        self.horse_image_label = QLabel()
+        self.horse_image_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        self.horse_image_label.setObjectName("horse_image_label")
+        about_main_layout.addWidget(self.horse_image_label)
+        
+        # Load horse image
+        self.load_horse_image()
+        
+        self.about_group.setLayout(about_main_layout)
         layout.addWidget(self.about_group)
         
         # Spacer
@@ -506,14 +516,19 @@ class MainWindow(QMainWindow):
             # Load pixmap
             pixmap = QPixmap(image_path)
             
-            # Scale to fit width while maintaining aspect ratio
-            # Use 80% of available width, max 400px
-            max_width = min(400, int(self.width() * 0.8))
-            if pixmap.width() > max_width:
-                pixmap = pixmap.scaledToWidth(max_width, Qt.SmoothTransformation)
+            # Scale to fit in About section - max 150px width, 120px height
+            max_width = 150
+            max_height = 120
+            
+            if pixmap.width() > max_width or pixmap.height() > max_height:
+                pixmap = pixmap.scaled(
+                    max_width, max_height,
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.SmoothTransformation
+                )
             
             self.horse_image_label.setPixmap(pixmap)
-            self.horse_image_label.setMinimumHeight(pixmap.height())
+            self.horse_image_label.setFixedSize(pixmap.size())
     
     def resizeEvent(self, event):
         """Handle window resize to update horse image scaling"""
@@ -626,16 +641,16 @@ class MainWindow(QMainWindow):
         # Show appropriate error message based on error type
         if "Sign in to confirm you're not a bot" in error:
             QMessageBox.warning(self, translator.get('error_network'), 
-                "YouTube is blocking requests. Please:\n\n"
-                "1. Make sure you're logged into YouTube in Firefox\n"
+                "The video site is blocking requests. Please:\n\n"
+                "1. Make sure you're logged into the site in Firefox\n"
                 "2. Try again (the app will use Firefox cookies)\n\n"
-                "If this doesn't work, YouTube may be blocking your IP/VPN.")
+                "If this doesn't work, the site may be blocking your IP/VPN.")
                 
-        elif "YouTube requires JavaScript challenge" in error or "Deno runtime" in error:
+        elif "JavaScript challenge" in error or "Deno runtime" in error:
             # JS challenge error - needs Deno installation
             QMessageBox.critical(self, translator.get('error_deno'),
-                "YouTube requires JavaScript challenge solving.\n\n" +
-                error + "\n\n" +
+                "The video site requires JavaScript challenge solving.\n\n" +
+                error + "\n\n"
                 "After installing Deno, restart the app.")
             
         elif "Network connection failed" in error or "Connection timed out" in error:
@@ -645,11 +660,11 @@ class MainWindow(QMainWindow):
         elif "Network is unreachable" in error or "Errno 101" in error or "system proxy" in error.lower():
             # Direct network error or proxy issue
             QMessageBox.critical(self, "Network/Proxy Issue",
-                "Cannot connect to YouTube. Since your Firefox uses system proxy settings:\n\n"
-                "1. Your Clash VPN may be blocking YouTube API\n"
+                "Cannot connect to the video site. Since your Firefox uses system proxy settings:\n\n"
+                "1. Your Clash VPN may be blocking the site API\n"
                 "2. Try disabling Clash VPN temporarily\n"
-                "3. Or configure Clash to allow YouTube API access\n"
-                "4. Check if YouTube works in Firefox first\n"
+                "3. Or configure Clash to allow the site API access\n"
+                "4. Check if the site works in Firefox first\n"
                 "5. Try a different network without VPN\n\n"
                 "Error: " + error[:200])
                 
