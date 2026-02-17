@@ -534,13 +534,19 @@ class MainWindow(QMainWindow):
         # Start progress timer (update every 2.5 seconds - slower for proxy)
         self.progress_timer.start(2500)
         
-        # Start timeout timer (show status update after 12 seconds)
-        self.timeout_timer.start(12000)
+        # B站URL需要更长的超时时间
+        if 'bilibili.com' in url.lower() or 'b23.tv' in url.lower():
+            timeout_duration = 25000  # 25秒 for B站
+        else:
+            timeout_duration = 12000  # 12秒 for 其他网站
+        
+        # Start timeout timer
+        self.timeout_timer.start(timeout_duration)
         
         # Start the fetch thread
         self.fetch_thread = FetchInfoThread(url)
-        self.fetch_thread.finished.connect(self.on_fetch_complete)
-        self.fetch_thread.error.connect(self.on_fetch_error)
+        self.fetch_thread.finished.connect(self.on_fetch_complete, Qt.QueuedConnection)
+        self.fetch_thread.error.connect(self.on_fetch_error, Qt.QueuedConnection)
         self.fetch_thread.start()
         
     def update_fetch_progress(self):
@@ -556,13 +562,20 @@ class MainWindow(QMainWindow):
         """Update status if fetch is taking longer than expected"""
         if self.fetch_thread and self.fetch_thread.isRunning():
             # Just update status text, don't show intrusive message box
-            self.status_label.setText("Still fetching... (using Firefox config)")
-            # Optional: Show tooltip instead of message box
-            self.status_label.setToolTip(
-                "Fetching is taking longer than usual.\n"
-                "The app is using Firefox configuration.\n"
-                "This may be due to YouTube server response time."
-            )
+            url = self.url_input.text().lower()
+            if 'bilibili.com' in url or 'b23.tv' in url:
+                self.status_label.setText("B站视频较大，请耐心等待...")
+                self.status_label.setToolTip(
+                    "B站视频可能较大，需要更多时间下载元数据。\n"
+                    "请耐心等待，如果超过30秒仍无响应，请检查网络连接。"
+                )
+            else:
+                self.status_label.setText("Still fetching... (using Firefox config)")
+                self.status_label.setToolTip(
+                    "Fetching is taking longer than usual.\n"
+                    "The app is using Firefox configuration.\n"
+                    "This may be due to YouTube server response time."
+                )
     
     def on_fetch_complete(self, info):
         # Stop timers
@@ -583,8 +596,11 @@ class MainWindow(QMainWindow):
             self.is_playlist = True
         else:
             # Single video
-            duration_min = info.get('duration', 0) // 60
-            duration_sec = info.get('duration', 0) % 60
+            duration = info.get('duration', 0)
+            # 修复：duration可能是浮点数，需要转换为整数
+            duration_sec_int = int(duration)
+            duration_min = duration_sec_int // 60
+            duration_sec = duration_sec_int % 60
             self.preview_label.setText(
                 f"🎬 Title: {info['title']}\n"
                 f"⏱️ Duration: {duration_min}:{duration_sec:02d}\n"

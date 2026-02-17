@@ -18,6 +18,54 @@ def get_proxy_url():
     else:
         return f"socks5://{proxy_host}:{proxy_port}"
 
+def is_bilibili_url(url):
+    """检测URL是否为B站URL"""
+    if not url:
+        return False
+    
+    # B站域名模式
+    bilibili_domains = [
+        'bilibili.com',
+        'b23.tv',
+        'biligame.com',
+        'biligame.net',
+        'bilibili.tv',
+    ]
+    
+    import re
+    url_lower = url.lower()
+    
+    # 检查是否包含B站域名
+    for domain in bilibili_domains:
+        if domain in url_lower:
+            return True
+    
+    # 检查B站视频ID模式 (BV开头)
+    bv_pattern = r'BV[a-zA-Z0-9]{10}'
+    if re.search(bv_pattern, url_lower, re.IGNORECASE):
+        return True
+    
+    # 检查B站av号模式
+    av_pattern = r'av\d+'
+    if re.search(av_pattern, url_lower, re.IGNORECASE):
+        return True
+    
+    return False
+
+def get_format_for_url(url, user_format_spec):
+    """根据URL类型返回合适的格式选择"""
+    if is_bilibili_url(url):
+        # B站需要特殊的格式选择
+        # 如果用户选择了音频格式，保持原样
+        if user_format_spec == 'bestaudio/best':
+            return user_format_spec
+        # 否则使用B站兼容格式
+        else:
+            return 'bestvideo+bestaudio'
+    else:
+        # 其他网站使用用户选择的格式
+        return user_format_spec
+
 class FetchInfoThread(QThread):
     finished = Signal(dict)
     error = Signal(str)
@@ -83,15 +131,30 @@ class FetchInfoThread(QThread):
         
         try:
             # METHOD 1: Try with JS challenge solving (if Deno available)
+            # 为B站URL使用智能格式选择
+            # B站需要bestvideo+bestaudio格式，其他网站使用best[height<=1080]
+            if is_bilibili_url(self.url):
+                format_for_url = 'bestvideo+bestaudio'
+                # B站需要更长的超时时间
+                socket_timeout = 30
+            else:
+                format_for_url = 'best[height<=1080]'
+                socket_timeout = 20
+            
             ydl_opts = {
                 'quiet': True,
                 'no_warnings': True,
-                'socket_timeout': 20,
+                'socket_timeout': socket_timeout,
                 'proxy': get_proxy_url(),
                 'cookiesfrombrowser': ('firefox',),
                 'user_agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0',
-                'format': 'best[height<=1080]',
+                'format': format_for_url,
             }
+            
+            # 为B站URL添加referer头
+            if is_bilibili_url(self.url):
+                ydl_opts['referer'] = 'https://www.bilibili.com'
+                print(f"DEBUG: B站URL检测成功，使用B站专用配置", flush=True)
             
             # If Deno is available, set environment to include it
             if deno_available and deno_path and deno_path != 'deno':
@@ -116,10 +179,12 @@ class FetchInfoThread(QThread):
                 # METHOD 2: Try without format selection (extract basic info only)
                 if 'Requested format is not available' in error_str:
                     print(f"DEBUG: Method 2: Extract basic info without formats...", flush=True)
+                    # B站需要更长的超时时间
+                    timeout_2 = 30 if is_bilibili_url(self.url) else 15
                     try:
                         ydl_opts_basic = {
                             'quiet': True,
-                            'socket_timeout': 15,
+                            'socket_timeout': timeout_2,
                             'proxy': get_proxy_url(),
                             'cookiesfrombrowser': ('firefox',),
                             'skip_download': True,
@@ -136,10 +201,12 @@ class FetchInfoThread(QThread):
                 
                 # METHOD 3: Try without cookies (direct connection)
                 print(f"DEBUG: Method 3: Try without cookies...", flush=True)
+                # B站需要更长的超时时间
+                timeout_3 = 30 if is_bilibili_url(self.url) else 15
                 try:
                     ydl_opts_nocookies = {
                         'quiet': True,
-                        'socket_timeout': 15,
+                        'socket_timeout': timeout_3,
                         'proxy': get_proxy_url(),
                         'user_agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36',
                         'skip_download': True,
@@ -325,8 +392,11 @@ class DownloadThread(QThread):
         
         for opts in approaches:
             try:
+                # 使用智能格式选择
+                actual_format = get_format_for_url(self.url, self.format_spec)
+                
                 ydl_opts = {
-                    'format': self.format_spec,
+                    'format': actual_format,
                     'outtmpl': self.output_template,
                     'progress_hooks': [progress_hook],
                     'merge_output_format': 'mp4',
@@ -335,6 +405,10 @@ class DownloadThread(QThread):
                     'proxy': get_proxy_url(),  # Add proxy
                     **opts
                 }
+                
+                # 为B站URL添加referer头
+                if is_bilibili_url(self.url):
+                    ydl_opts['referer'] = 'https://www.bilibili.com'
                 
                 # If Deno is available, set environment to include it
                 if deno_available and deno_path and deno_path != 'deno':
