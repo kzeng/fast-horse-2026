@@ -5,7 +5,7 @@ a = Analysis(
     ['src/main.py'],
     pathex=[],
     binaries=[],
-    datas=[('src/app/style.qss', 'app'), ('src/app/style_light.qss', 'app')],
+    datas=[('src/app/style.qss', 'app'), ('src/app/style_light.qss', 'app'), ('horse2026.jpeg', '.')],
     hiddenimports=['PySide6', 'PySide6.QtCore', 'PySide6.QtGui', 'PySide6.QtWidgets', 'yt_dlp', 'secretstorage', 'cryptography', 'cffi', 'jeepney'],
     hookspath=[],
     hooksconfig={},

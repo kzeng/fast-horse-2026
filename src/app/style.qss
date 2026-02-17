@@ -1,5 +1,10 @@
 /* Dark theme for YouTube Downloader */
 
+QMainWindow {
+    background-color: #1e1e1e;
+    color: #ffffff;
+}
+
 QWidget {
     background-color: #1e1e1e;
     color: #ffffff;
@@ -132,6 +137,12 @@ QLabel#status_label {
     font-style: italic;
 }
 
+/* Horse image */
+QLabel#horse_image_label {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
 /* Layout spacing */
 QVBoxLayout {
     spacing: 15px;
@@ -139,4 +150,39 @@ QVBoxLayout {
 
 QHBoxLayout {
     spacing: 10px;
+}
+
+/* Custom title bar */
+QWidget#title_bar {
+    background-color: #252525;
+    border-bottom: 1px solid #3d3d3d;
+}
+
+QLabel#window_title_label {
+    font-size: 14px;
+    font-weight: bold;
+    color: #ffffff;
+}
+
+QPushButton#btn_minimize,
+QPushButton#btn_maximize,
+QPushButton#btn_close {
+    background-color: transparent;
+    border: none;
+    border-radius: 4px;
+    padding: 4px;
+    min-width: 24px;
+}
+
+QPushButton#btn_minimize:hover,
+QPushButton#btn_maximize:hover {
+    background-color: #3a3a3a;
+}
+
+QPushButton#btn_close {
+    color: #ffffff;
+}
+
+QPushButton#btn_close:hover {
+    background-color: #d9534f;
 }

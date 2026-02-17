@@ -1,5 +1,10 @@
 /* Light theme for Fast-Horse-2026 */
 
+QMainWindow {
+    background-color: #f5f5f5;
+    color: #333333;
+}
+
 QWidget {
     background-color: #f5f5f5;
     color: #333333;
@@ -132,6 +137,12 @@ QLabel#status_label {
     font-style: italic;
 }
 
+/* Horse image */
+QLabel#horse_image_label {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
 /* Layout spacing */
 QVBoxLayout {
     spacing: 15px;
@@ -139,6 +150,42 @@ QVBoxLayout {
 
 QHBoxLayout {
     spacing: 10px;
+}
+
+/* Custom title bar */
+QWidget#title_bar {
+    background-color: #ffffff;
+    border-bottom: 1px solid #cccccc;
+}
+
+QLabel#window_title_label {
+    font-size: 14px;
+    font-weight: bold;
+    color: #333333;
+}
+
+QPushButton#btn_minimize,
+QPushButton#btn_maximize,
+QPushButton#btn_close {
+    background-color: transparent;
+    border: none;
+    border-radius: 4px;
+    padding: 4px;
+    min-width: 24px;
+}
+
+QPushButton#btn_minimize:hover,
+QPushButton#btn_maximize:hover {
+    background-color: #e0e0e0;
+}
+
+QPushButton#btn_close {
+    color: #333333;
+}
+
+QPushButton#btn_close:hover {
+    background-color: #d9534f;
+    color: #ffffff;
 }
 
 /* Menu bar */

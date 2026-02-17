@@ -38,8 +38,26 @@ class FetchInfoThread(QThread):
         deno_available = False
         deno_path = None
         try:
-            # First check common Deno installation paths
+            # First check bundled deno in same directory as executable
+            # When packaged with PyInstaller, sys._MEIPASS contains temp directory
+            # The deno binary should be in the same directory as the executable
+            import sys
+            import os
+            
+            # Get directory of current executable
+            if getattr(sys, 'frozen', False):
+                # Running as PyInstaller bundle
+                exe_dir = os.path.dirname(sys.executable)
+                bundled_deno = os.path.join(exe_dir, 'deno')
+            else:
+                # Running as script
+                exe_dir = os.path.dirname(os.path.abspath(__file__))
+                project_root = os.path.dirname(exe_dir)
+                bundled_deno = os.path.join(project_root, 'deno')
+            
+            # Check common Deno installation paths (including bundled)
             common_paths = [
+                bundled_deno,  # Bundled deno first
                 os.path.expanduser('~/.deno/bin/deno'),  # Current user's Deno
                 '/usr/local/bin/deno',
                 '/usr/bin/deno',
@@ -236,8 +254,26 @@ class DownloadThread(QThread):
         deno_available = False
         deno_path = None
         try:
-            # First check common Deno installation paths
+            # First check bundled deno in same directory as executable
+            # When packaged with PyInstaller, sys._MEIPASS contains temp directory
+            # The deno binary should be in the same directory as the executable
+            import sys
+            import os
+            
+            # Get directory of current executable
+            if getattr(sys, 'frozen', False):
+                # Running as PyInstaller bundle
+                exe_dir = os.path.dirname(sys.executable)
+                bundled_deno = os.path.join(exe_dir, 'deno')
+            else:
+                # Running as script
+                exe_dir = os.path.dirname(os.path.abspath(__file__))
+                project_root = os.path.dirname(exe_dir)
+                bundled_deno = os.path.join(project_root, 'deno')
+            
+            # Check common Deno installation paths (including bundled)
             common_paths = [
+                bundled_deno,  # Bundled deno first
                 os.path.expanduser('~/.deno/bin/deno'),  # Current user's Deno
                 '/usr/local/bin/deno',
                 '/usr/bin/deno',

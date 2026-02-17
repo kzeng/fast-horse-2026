@@ -3,15 +3,123 @@ from PySide6.QtWidgets import (
     QLabel, QComboBox, QProgressBar, QFileDialog, QMessageBox,
     QTabWidget, QGroupBox, QRadioButton, QFormLayout, QTextEdit
 )
-from PySide6.QtCore import Qt, QSettings, QTimer, Signal
-from PySide6.QtGui import QFont
+from PySide6.QtCore import Qt, QSettings, QTimer, Signal, QPoint
+from PySide6.QtGui import QFont, QPixmap
 import os
 from .download_manager import FetchInfoThread, DownloadThread
 from .translations import translator
+from . import __version__
+
+
+class TitleBar(QWidget):
+    """Custom title bar for a frameless main window"""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._parent = parent
+        self.setObjectName("title_bar")
+        self.setFixedHeight(40)
+
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(10, 0, 10, 0)
+        layout.setSpacing(8)
+
+        # Title text
+        self.title_label = QLabel(translator.get('window_title'))
+        self.title_label.setObjectName("window_title_label")
+        self.title_label.setAlignment(Qt.AlignVCenter | Qt.AlignLeft)
+        layout.addWidget(self.title_label)
+        layout.addStretch()
+
+        # Window control buttons
+        self.min_btn = QPushButton("─")
+        self.min_btn.setObjectName("btn_minimize")
+        self.min_btn.setFixedSize(30, 24)
+        self.min_btn.clicked.connect(self.on_minimize)
+
+        self.max_btn = QPushButton("⬜")
+        self.max_btn.setObjectName("btn_maximize")
+        self.max_btn.setFixedSize(30, 24)
+        self.max_btn.clicked.connect(self.on_maximize_restore)
+
+        self.close_btn = QPushButton("✕")
+        self.close_btn.setObjectName("btn_close")
+        self.close_btn.setFixedSize(30, 24)
+        self.close_btn.clicked.connect(self.on_close)
+
+        layout.addWidget(self.min_btn)
+        layout.addWidget(self.max_btn)
+        layout.addWidget(self.close_btn)
+
+        self._drag_pos: QPoint | None = None
+
+    def on_minimize(self):
+        if self._parent is not None:
+            self._parent.showMinimized()
+
+    def on_maximize_restore(self):
+        if self._parent is None:
+            return
+        if self._parent.isMaximized():
+            self._parent.showNormal()
+        else:
+            self._parent.showMaximized()
+
+    def on_close(self):
+        if self._parent is not None:
+            self._parent.close()
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton and self._parent is not None:
+            # Prefer native system move (works best on Wayland/X11)
+            window = self._parent.windowHandle()
+            if window is not None:
+                try:
+                    # startSystemMove() doesn't take arguments in newer Qt versions
+                    window.startSystemMove()
+                    event.accept()
+                    return
+                except TypeError:
+                    # Fallback for older Qt versions or if the above fails
+                    pass
+
+            # Fallback: manual move by tracking global cursor delta
+            self._drag_pos = event.globalPosition().toPoint()
+            event.accept()
+        else:
+            super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        if self._drag_pos is not None and event.buttons() & Qt.LeftButton and self._parent is not None:
+            # Move window by the delta between current and previous global positions
+            current_pos = event.globalPosition().toPoint()
+            delta = current_pos - self._drag_pos
+            self._parent.move(self._parent.pos() + delta)
+            self._drag_pos = current_pos
+            event.accept()
+        else:
+            super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        self._drag_pos = None
+        super().mouseReleaseEvent(event)
+
+    def mouseDoubleClickEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.on_maximize_restore()
+            event.accept()
+        else:
+            super().mouseDoubleClickEvent(event)
+
+    def update_text(self):
+        """Update title text when language changes"""
+        self.title_label.setText(translator.get('window_title'))
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        # Frameless window so we can draw our own custom title bar
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.Window)
         self.setWindowTitle(translator.get('window_title'))
         self.setMinimumSize(800, 600)
         self.current_info = None
@@ -61,8 +169,19 @@ class MainWindow(QMainWindow):
         self.tab_widget.addTab(self.main_tab, translator.get('tab_main'))
         self.tab_widget.addTab(self.settings_tab, translator.get('tab_settings'))
         
-        # Set tab widget as central widget
-        self.setCentralWidget(self.tab_widget)
+        # Wrap title bar + tabs in a container widget
+        container = QWidget()
+        container_layout = QVBoxLayout(container)
+        container_layout.setContentsMargins(0, 0, 0, 0)
+        container_layout.setSpacing(0)
+
+        # Custom title bar at the top
+        self.title_bar = TitleBar(self)
+        container_layout.addWidget(self.title_bar)
+        container_layout.addWidget(self.tab_widget)
+
+        # Set container as central widget
+        self.setCentralWidget(container)
         
     def create_main_tab(self):
         """Create the main downloader tab"""
@@ -147,6 +266,15 @@ class MainWindow(QMainWindow):
         self.status_label.setObjectName("status_label")
         self.status_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(self.status_label)
+        
+        # Horse Image
+        self.horse_image_label = QLabel()
+        self.horse_image_label.setAlignment(Qt.AlignCenter)
+        self.horse_image_label.setObjectName("horse_image_label")
+        layout.addWidget(self.horse_image_label)
+        
+        # Load horse image
+        self.load_horse_image()
         
         # Spacer
         layout.addStretch()
@@ -240,7 +368,7 @@ class MainWindow(QMainWindow):
         self.about_text.setPlainText(
             f"{translator.get('about_description')}\n\n"
             f"{translator.get('about_author')}\n"
-            f"{translator.get('about_version')}"
+            f"{translator.get('about_version')} v{__version__}"
         )
         self.about_text.setMaximumHeight(120)
         
@@ -339,7 +467,7 @@ class MainWindow(QMainWindow):
             self.save_proxy_btn.setText(translator.get('settings_save'))
             
             self.about_group.setTitle(translator.get('settings_about'))
-            about_text = f"{translator.get('about_description')}\n\n{translator.get('about_author')}\n{translator.get('about_version')}"
+            about_text = f"{translator.get('about_description')}\n\n{translator.get('about_author')}\n{translator.get('about_version')} v{__version__}"
             if hasattr(self, 'about_text'):
                 self.about_text.setPlainText(about_text)
     
@@ -360,8 +488,37 @@ class MainWindow(QMainWindow):
         
         # Save theme preference
         self.settings.setValue("theme", theme)
+        
+        # Update horse image for theme
+        self.load_horse_image()
     
-
+    def load_horse_image(self):
+        """Load and display the horse image with appropriate scaling"""
+        if not hasattr(self, 'horse_image_label'):
+            return
+            
+        # Get project root directory (one level up from app directory)
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(current_dir)
+        image_path = os.path.join(project_root, "horse2026.jpeg")
+        
+        if os.path.exists(image_path):
+            # Load pixmap
+            pixmap = QPixmap(image_path)
+            
+            # Scale to fit width while maintaining aspect ratio
+            # Use 80% of available width, max 400px
+            max_width = min(400, int(self.width() * 0.8))
+            if pixmap.width() > max_width:
+                pixmap = pixmap.scaledToWidth(max_width, Qt.SmoothTransformation)
+            
+            self.horse_image_label.setPixmap(pixmap)
+            self.horse_image_label.setMinimumHeight(pixmap.height())
+    
+    def resizeEvent(self, event):
+        """Handle window resize to update horse image scaling"""
+        super().resizeEvent(event)
+        self.load_horse_image()
         
     def fetch_video_info(self):
         url = self.url_input.text().strip()
@@ -543,6 +700,9 @@ class MainWindow(QMainWindow):
     def update_ui_text(self):
         """Update all UI text when language changes"""
         self.setWindowTitle(translator.get('window_title'))
+        # Update custom title bar text if present
+        if hasattr(self, 'title_bar'):
+            self.title_bar.update_text()
         
         # Update progress stages
         self.fetch_progress_stages = [
