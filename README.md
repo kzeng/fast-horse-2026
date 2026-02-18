@@ -27,7 +27,9 @@ A powerful, feature-rich desktop application for downloading videos from YouTube
 
 ## 📸 **Screenshots**
 
-*(Application screenshots would go here)*
+![Screenshot](./Screenshot.png)
+
+![Screenshot2](./Screenshot2.png)
 
 ## 🚀 **Quick Start**
 
