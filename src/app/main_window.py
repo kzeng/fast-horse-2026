@@ -357,6 +357,7 @@ class MainWindow(QMainWindow):
         
         # Use horizontal layout for about section (text on left, image on right)
         about_main_layout = QHBoxLayout()
+        about_main_layout.setContentsMargins(0, 10, 10, 10)
         
         # Text on left
         about_text_layout = QVBoxLayout()
