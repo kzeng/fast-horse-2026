@@ -1,6 +1,18 @@
 import yt_dlp
+import sys
 from PySide6.QtCore import QThread, Signal, QSettings
 from .translations import translator
+
+def get_browser_cookies_list():
+    """Get list of browsers to try for cookies, based on platform"""
+    is_windows = sys.platform == 'win32'
+    
+    if is_windows:
+        # Windows browsers
+        return ['firefox', 'chrome', 'edge', 'brave', 'opera']
+    else:
+        # Linux browsers
+        return ['firefox', 'chrome', 'brave', 'opera']
 
 def get_proxy_url():
     """Get proxy URL from application settings"""
@@ -86,39 +98,53 @@ class FetchInfoThread(QThread):
         deno_available = False
         deno_path = None
         try:
-            # First check bundled deno in same directory as executable
-            # When packaged with PyInstaller, sys._MEIPASS contains temp directory
-            # The deno binary should be in the same directory as the executable
             import sys
             import os
             
             # Get directory of current executable
+            is_windows = sys.platform == 'win32'
             if getattr(sys, 'frozen', False):
-                # Running as PyInstaller bundle
                 exe_dir = os.path.dirname(sys.executable)
-                bundled_deno = os.path.join(exe_dir, 'deno')
+                project_root = exe_dir
             else:
-                # Running as script
                 exe_dir = os.path.dirname(os.path.abspath(__file__))
                 project_root = os.path.dirname(exe_dir)
-                bundled_deno = os.path.join(project_root, 'deno')
+            
+            # Platform-specific deno name
+            deno_exe = 'deno.exe' if is_windows else 'deno'
+            bundled_deno = os.path.join(exe_dir, deno_exe) if getattr(sys, 'frozen', False) else os.path.join(project_root, deno_exe)
             
             # Check common Deno installation paths (including bundled)
-            common_paths = [
-                bundled_deno,  # Bundled deno first
-                os.path.expanduser('~/.deno/bin/deno'),  # Current user's Deno
-                '/usr/local/bin/deno',
-                '/usr/bin/deno',
-                'deno'  # Check PATH as fallback
-            ]
+            common_paths = [bundled_deno]
+            
+            if is_windows:
+                # Windows paths
+                common_paths.extend([
+                    os.path.join(os.path.expanduser('~'), '.deno', 'bin', 'deno.exe'),
+                    os.path.join(os.environ.get('LOCALAPPDATA', ''), 'deno', 'bin', 'deno.exe'),
+                    os.path.join(os.environ.get('PROGRAMFILES', ''), 'deno', 'deno.exe'),
+                    'deno.exe'
+                ])
+            else:
+                # Linux paths
+                common_paths.extend([
+                    os.path.expanduser('~/.deno/bin/deno'),
+                    '/usr/local/bin/deno',
+                    '/usr/bin/deno',
+                    'deno'
+                ])
             
             for deno_candidate in common_paths:
                 try:
-                    result = subprocess.run(['which', deno_candidate] if deno_candidate == 'deno' else ['test', '-f', deno_candidate], 
-                                          capture_output=True, text=True)
+                    if is_windows:
+                        result = subprocess.run(['cmd', '/c', 'test', '-f', deno_candidate] if ':' in deno_candidate else ['where', deno_candidate], 
+                                              capture_output=True, text=True, shell=True)
+                    else:
+                        result = subprocess.run(['which', deno_candidate] if deno_candidate == 'deno' else ['test', '-f', deno_candidate], 
+                                              capture_output=True, text=True)
                     if result.returncode == 0:
                         deno_available = True
-                        deno_path = deno_candidate if deno_candidate != 'deno' else 'deno'
+                        deno_path = deno_candidate
                         print(f"DEBUG: Deno found at: {deno_path}", flush=True)
                         break
                 except Exception:
@@ -141,12 +167,13 @@ class FetchInfoThread(QThread):
                 format_for_url = 'best[height<=1080]'
                 socket_timeout = 20
             
+            browser_list = get_browser_cookies_list()
             ydl_opts = {
                 'quiet': True,
                 'no_warnings': True,
                 'socket_timeout': socket_timeout,
                 'proxy': get_proxy_url(),
-                'cookiesfrombrowser': ('firefox',),
+                'cookiesfrombrowser': (browser_list[0],),
                 'user_agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0',
                 'format': format_for_url,
             }
@@ -186,7 +213,7 @@ class FetchInfoThread(QThread):
                             'quiet': True,
                             'socket_timeout': timeout_2,
                             'proxy': get_proxy_url(),
-                            'cookiesfrombrowser': ('firefox',),
+                            'cookiesfrombrowser': (browser_list[0],),
                             'skip_download': True,
                         }
                         
@@ -321,39 +348,53 @@ class DownloadThread(QThread):
         deno_available = False
         deno_path = None
         try:
-            # First check bundled deno in same directory as executable
-            # When packaged with PyInstaller, sys._MEIPASS contains temp directory
-            # The deno binary should be in the same directory as the executable
             import sys
             import os
             
             # Get directory of current executable
+            is_windows = sys.platform == 'win32'
             if getattr(sys, 'frozen', False):
-                # Running as PyInstaller bundle
                 exe_dir = os.path.dirname(sys.executable)
-                bundled_deno = os.path.join(exe_dir, 'deno')
+                project_root = exe_dir
             else:
-                # Running as script
                 exe_dir = os.path.dirname(os.path.abspath(__file__))
                 project_root = os.path.dirname(exe_dir)
-                bundled_deno = os.path.join(project_root, 'deno')
+            
+            # Platform-specific deno name
+            deno_exe = 'deno.exe' if is_windows else 'deno'
+            bundled_deno = os.path.join(exe_dir, deno_exe) if getattr(sys, 'frozen', False) else os.path.join(project_root, deno_exe)
             
             # Check common Deno installation paths (including bundled)
-            common_paths = [
-                bundled_deno,  # Bundled deno first
-                os.path.expanduser('~/.deno/bin/deno'),  # Current user's Deno
-                '/usr/local/bin/deno',
-                '/usr/bin/deno',
-                'deno'  # Check PATH as fallback
-            ]
+            common_paths = [bundled_deno]
+            
+            if is_windows:
+                # Windows paths
+                common_paths.extend([
+                    os.path.join(os.path.expanduser('~'), '.deno', 'bin', 'deno.exe'),
+                    os.path.join(os.environ.get('LOCALAPPDATA', ''), 'deno', 'bin', 'deno.exe'),
+                    os.path.join(os.environ.get('PROGRAMFILES', ''), 'deno', 'deno.exe'),
+                    'deno.exe'
+                ])
+            else:
+                # Linux paths
+                common_paths.extend([
+                    os.path.expanduser('~/.deno/bin/deno'),
+                    '/usr/local/bin/deno',
+                    '/usr/bin/deno',
+                    'deno'
+                ])
             
             for deno_candidate in common_paths:
                 try:
-                    result = subprocess.run(['which', deno_candidate] if deno_candidate == 'deno' else ['test', '-f', deno_candidate], 
-                                          capture_output=True, text=True)
+                    if is_windows:
+                        result = subprocess.run(['cmd', '/c', 'test', '-f', deno_candidate] if ':' in deno_candidate else ['where', deno_candidate], 
+                                              capture_output=True, text=True, shell=True)
+                    else:
+                        result = subprocess.run(['which', deno_candidate] if deno_candidate == 'deno' else ['test', '-f', deno_candidate], 
+                                              capture_output=True, text=True)
                     if result.returncode == 0:
                         deno_available = True
-                        deno_path = deno_candidate if deno_candidate != 'deno' else 'deno'
+                        deno_path = deno_candidate
                         print(f"DEBUG: DownloadThread - Deno found at: {deno_path}", flush=True)
                         break
                 except Exception:
@@ -384,11 +425,11 @@ class DownloadThread(QThread):
                 self.status.emit("Processing...")
                 
         # Try different cookie approaches
-        approaches = [
-            {'cookiesfrombrowser': ('firefox',)},  # Try Firefox first (user's setup)
-            {'cookiesfrombrowser': ('chrome',)},
-            {}
-        ]
+        browser_list = get_browser_cookies_list()
+        approaches = []
+        for browser in browser_list:
+            approaches.append({'cookiesfrombrowser': (browser,)})
+        approaches.append({})  # No cookies as fallback
         
         for opts in approaches:
             try:

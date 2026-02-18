@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QSettings, QTimer, Signal, QPoint
 from PySide6.QtGui import QFont, QPixmap
 import os
+import sys
 from .download_manager import FetchInfoThread, DownloadThread
 from .translations import translator
 from . import __version__

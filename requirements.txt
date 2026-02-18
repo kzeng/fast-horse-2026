@@ -3,3 +3,4 @@ yt-dlp>=2025.1.1
 PyYAML>=6.0
 secretstorage>=3.3.1
 pyinstaller>=6.0.0
+pywin32>=300; sys_platform == 'win32'
