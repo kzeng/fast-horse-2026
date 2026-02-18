@@ -33,6 +33,11 @@ source venv/bin/activate
 # Install/upgrade dependencies
 echo "Installing dependencies..."
 pip install --upgrade pip
+
+# Install yt-dlp nightly for better YouTube support
+echo "Installing yt-dlp nightly (latest fixes for YouTube)..."
+pip install -U --pre yt-dlp
+
 pip install -r requirements.txt
 
 # Install deno if not present
@@ -82,17 +87,22 @@ cp horse2026.jpeg dist_package/
 cp run.sh dist_package/ 2>/dev/null || true
 cp -r src/app/style.qss src/app/style_light.qss dist_package/ 2>/dev/null || true
 
-# Copy or create deno binary
+# Copy deno binary
 echo "Setting up deno binary..."
-if [ -f "dist_package/deno" ]; then
-    echo "✅ Using existing deno binary in dist_package/"
-elif command -v deno &> /dev/null && [ -f "deno_runner.js" ]; then
-    echo "Compiling minimal deno runtime..."
-    deno compile --allow-net --allow-read --allow-write --allow-env --output dist_package/deno deno_runner.js
-    echo "✅ Deno compiled: $(du -h dist_package/deno | cut -f1)"
+DENO_PATH=""
+if [ -f "$HOME/.deno/bin/deno" ]; then
+    DENO_PATH="$HOME/.deno/bin/deno"
+elif command -v deno &> /dev/null; then
+    DENO_PATH=$(which deno)
+fi
+
+if [ -n "$DENO_PATH" ] && [ -f "$DENO_PATH" ]; then
+    cp "$DENO_PATH" dist_package/deno
+    chmod +x dist_package/deno
+    echo "✅ Deno bundled: $(du -h dist_package/deno | cut -f1)"
 else
-    echo "⚠️  No deno binary available, YouTube downloads may fail for some videos"
-    echo "   Users can install deno manually: curl -fsSL https://deno.land/install.sh | sh"
+    echo "⚠️  No deno binary found, YouTube downloads may fail for some videos"
+    echo "   Install with: curl -fsSL https://deno.land/install.sh | sh"
 fi
 
 # Create tarball with versioned name

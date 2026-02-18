@@ -1,7 +1,153 @@
 import yt_dlp
 import sys
+import json
+import urllib.request
 from PySide6.QtCore import QThread, Signal, QSettings
 from .translations import translator
+
+# Invidious instances (public, no API key needed)
+INVIDIOUS_INSTANCES = [
+    "https://invidious.fdn.fr",
+    "https://invidious.jingl.xyz",
+    "https://invidious.kavin.rocks",
+    "https://watchapi.whatever.social",
+]
+
+def fetch_video_info_invidious(video_id):
+    """Fetch video info via Invidious API as fallback"""
+    for instance in INVIDIOUS_INSTANCES:
+        try:
+            url = f"{instance}/api/v1/videos/{video_id}"
+            req = urllib.request.Request(url, headers={
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            })
+            with urllib.request.urlopen(req, timeout=10) as response:
+                data = json.loads(response.read().decode())
+                
+                # Convert Invidious format to yt-dlp compatible format
+                info = {
+                    'id': video_id,
+                    'title': data.get('title', 'Unknown'),
+                    'description': data.get('description', ''),
+                    'thumbnail': data.get('thumbnailUrl', ''),
+                    'duration': data.get('lengthSeconds', 0),
+                    'uploader': data.get('author', 'Unknown'),
+                    'uploader_url': data.get('authorUrl', ''),
+                    'view_count': data.get('viewCount', 0),
+                    'like_count': data.get('likeCount', 0),
+                    'upload_date': data.get('published', ''),
+                    'formats': [],
+                    '_invidious_instance': instance,
+                }
+                
+                # Convert video formats - use direct URLs from Invidious
+                for fmt in data.get('adaptiveFormats', []):
+                    direct_url = fmt.get('url', '')
+                    if direct_url:
+                        info['formats'].append({
+                            'format_id': fmt.get('itag', 'unknown'),
+                            'url': direct_url,
+                            'ext': fmt.get('type', '').split('/')[0] if '/' in fmt.get('type', 'mp4') else 'mp4',
+                            'filesize': fmt.get('contentLength', 0),
+                            'format_note': fmt.get('qualityLabel', ''),
+                            'type': 'video',
+                        })
+                
+                # Add combined formats (video+audio)
+                for fmt in data.get('formatStreams', []):
+                    direct_url = fmt.get('url', '')
+                    if direct_url:
+                        info['formats'].append({
+                            'format_id': fmt.get('itag', 'unknown'),
+                            'url': direct_url,
+                            'ext': fmt.get('type', '').split('/')[0] if '/' in fmt.get('type', 'mp4') else 'mp4',
+                            'filesize': fmt.get('contentLength', 0),
+                            'format_note': fmt.get('quality', ''),
+                            'type': 'stream',
+                        })
+                    
+                return info
+        except Exception as e:
+            print(f"DEBUG: Invidious instance {instance} failed: {e}", flush=True)
+            continue
+    
+    return None
+
+def download_via_invidious(video_id, output_template, progress_callback, status_callback):
+    """Download video directly via Invidious - bypasses YouTube blocking"""
+    import urllib.request
+    
+    info = fetch_video_info_invidious(video_id)
+    if not info:
+        raise Exception("Invidious: Could not fetch video info")
+    
+    title = info.get('title', 'video')
+    formats = info.get('formats', [])
+    
+    if not formats:
+        raise Exception("Invidious: No formats available")
+    
+    # Sort by quality (prefer higher resolution)
+    formats_sorted = sorted(formats, key=lambda x: x.get('format_note', ''), reverse=True)
+    
+    # Get best format
+    best_format = formats_sorted[0]
+    video_url = best_format.get('url', '')
+    
+    if not video_url:
+        raise Exception("Invidious: No downloadable URL found")
+    
+    status_callback(f"Downloading via Invidious: {best_format.get('format_note', 'Unknown quality')}")
+    
+    # Download the file directly
+    try:
+        req = urllib.request.Request(video_url, headers={
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        })
+        
+        with urllib.request.urlopen(req) as response:
+            total_size = int(response.headers.get('Content-Length', 0))
+            downloaded = 0
+            chunk_size = 8192
+            
+            # Determine output filename
+            ext = best_format.get('ext', 'mp4')
+            if '%(title)s' in output_template:
+                output_template = output_template.replace('%(title)s', title[:50])
+            output_file = output_template.replace('%(ext)s', ext).replace('.%(ext)s', f'.{ext}')
+            
+            with open(output_file, 'wb') as f:
+                while True:
+                    chunk = response.read(chunk_size)
+                    if not chunk:
+                        break
+                    f.write(chunk)
+                    downloaded += len(chunk)
+                    if total_size > 0:
+                        percent = (downloaded / total_size) * 100
+                        progress_callback(percent)
+            
+            return output_file, title
+            
+    except Exception as e:
+        raise Exception(f"Invidious download failed: {e}")
+
+def is_youtube_url(url):
+    """Check if URL is from YouTube"""
+    return 'youtube.com' in url or 'youtu.be' in url
+
+def get_youtube_video_id(url):
+    """Extract video ID from YouTube URL"""
+    import re
+    patterns = [
+        r'(?:youtube\.com/watch\?v=|youtu\.be/|youtube\.com/embed/)([a-zA-Z0-9_-]{11})',
+        r'youtube\.com/shorts/([a-zA-Z0-9_-]{11})',
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match:
+            return match.group(1)
+    return None
 
 def get_browser_cookies_list():
     """Get list of browsers to try for cookies, based on platform"""
@@ -44,18 +190,24 @@ def cleanup_temp_files(output_template):
 def get_proxy_url():
     """Get proxy URL from application settings"""
     settings = QSettings("Fast-Horse-2026", "App")
-    proxy_type = settings.value("proxy_type", translator.get('settings_proxy_socks5'))
+    
+    # Get proxy type, default to "None" (use system proxy)
+    proxy_type = settings.value("proxy_type", None)
+    
+    # If no proxy type is set or it's the "None" option, return empty string
+    # This tells yt-dlp to use system proxy settings (from HTTP_PROXY, HTTPS_PROXY env vars)
+    if not proxy_type or proxy_type == translator.get('settings_proxy_none'):
+        return ''
+    
     proxy_host = settings.value("proxy_host", "127.0.0.1")
     proxy_port = settings.value("proxy_port", "10808")
     
-    if proxy_type == translator.get('settings_proxy_none'):
-        return None
-    elif proxy_type == translator.get('settings_proxy_socks5'):
+    if proxy_type == translator.get('settings_proxy_socks5'):
         return f"socks5://{proxy_host}:{proxy_port}"
     elif proxy_type == translator.get('settings_proxy_http'):
         return f"http://{proxy_host}:{proxy_port}"
     else:
-        return f"socks5://{proxy_host}:{proxy_port}"
+        return ''  # Use system proxy for unknown types
 
 def is_bilibili_url(url):
     """检测URL是否为B站URL"""
@@ -195,15 +347,36 @@ class FetchInfoThread(QThread):
                 socket_timeout = 20
             
             browser_list = get_browser_cookies_list()
+            
+            # Get platform-specific user agent
+            import sys
+            is_windows = sys.platform == 'win32'
+            if is_windows:
+                user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            else:
+                user_agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0'
+            
+            import os
+            proxy_url = get_proxy_url()
+            
             ydl_opts = {
                 'quiet': True,
                 'no_warnings': True,
                 'socket_timeout': socket_timeout,
-                'proxy': get_proxy_url(),
                 'cookiesfrombrowser': (browser_list[0],),
-                'user_agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0',
+                'user_agent': user_agent,
                 'format': format_for_url,
+                'http_headers': {
+                    'Accept-Language': 'en-US,en;q=0.9',
+                },
             }
+            
+            # Only add proxy if explicitly configured (not empty string)
+            if proxy_url:
+                ydl_opts['proxy'] = proxy_url
+            else:
+                # Don't set proxy at all - let yt-dlp use system proxy
+                pass
             
             # 为B站URL添加referer头
             if is_bilibili_url(self.url):
@@ -235,14 +408,17 @@ class FetchInfoThread(QThread):
                     print(f"DEBUG: Method 2: Extract basic info without formats...", flush=True)
                     # B站需要更长的超时时间
                     timeout_2 = 30 if is_bilibili_url(self.url) else 15
+                    
                     try:
+                        proxy_url = get_proxy_url()
                         ydl_opts_basic = {
                             'quiet': True,
                             'socket_timeout': timeout_2,
-                            'proxy': get_proxy_url(),
                             'cookiesfrombrowser': (browser_list[0],),
                             'skip_download': True,
                         }
+                        if proxy_url:
+                            ydl_opts_basic['proxy'] = proxy_url
                         
                         with yt_dlp.YoutubeDL(ydl_opts_basic) as ydl:
                             info = ydl.extract_info(self.url, download=False, process=False)
@@ -257,14 +433,27 @@ class FetchInfoThread(QThread):
                 print(f"DEBUG: Method 3: Try without cookies...", flush=True)
                 # B站需要更长的超时时间
                 timeout_3 = 30 if is_bilibili_url(self.url) else 15
+                
+                # Get platform-specific user agent
+                is_windows = sys.platform == 'win32'
+                if is_windows:
+                    user_agent_3 = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                else:
+                    user_agent_3 = 'Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0'
+                
                 try:
+                    proxy_url = get_proxy_url()
                     ydl_opts_nocookies = {
                         'quiet': True,
                         'socket_timeout': timeout_3,
-                        'proxy': get_proxy_url(),
-                        'user_agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36',
+                        'user_agent': user_agent_3,
+                        'http_headers': {
+                            'Accept-Language': 'en-US,en;q=0.9',
+                        },
                         'skip_download': True,
                     }
+                    if proxy_url:
+                        ydl_opts_nocookies['proxy'] = proxy_url
                     
                     with yt_dlp.YoutubeDL(ydl_opts_nocookies) as ydl:
                         info = ydl.extract_info(self.url, download=False, process=False)
@@ -348,6 +537,20 @@ class FetchInfoThread(QThread):
                 )
             else:
                 error_msg = f"Failed to fetch video: {error_str[:100]}"
+            
+            # Try Invidious as last resort for YouTube videos
+            if is_youtube_url(self.url):
+                video_id = get_youtube_video_id(self.url)
+                if video_id:
+                    print(f"DEBUG: Trying Invidious fallback for YouTube video {video_id}...", flush=True)
+                    try:
+                        invidious_info = fetch_video_info_invidious(video_id)
+                        if invidious_info:
+                            print(f"DEBUG: Invidious SUCCESS! Got video: {invidious_info.get('title', 'Unknown')[:50]}", flush=True)
+                            self.finished.emit(invidious_info)
+                            return
+                    except Exception as inv_err:
+                        print(f"DEBUG: Invidious fallback failed: {inv_err}", flush=True)
             
             self.error.emit(error_msg)
         
@@ -463,6 +666,20 @@ class DownloadThread(QThread):
                 # 使用智能格式选择
                 actual_format = get_format_for_url(self.url, self.format_spec)
                 
+                # Get platform-specific user agent
+                is_windows = sys.platform == 'win32'
+                if is_windows:
+                    user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                else:
+                    user_agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0'
+                
+                import os
+                proxy_url = get_proxy_url()
+                
+                # Debug: Print proxy info
+                print(f"DEBUG DOWNLOAD: proxy_url = '{proxy_url}'", flush=True)
+                print(f"DEBUG DOWNLOAD: HTTP_PROXY env = '{os.environ.get('HTTP_PROXY', 'NOT SET')}'", flush=True)
+                
                 ydl_opts = {
                     'format': actual_format,
                     'outtmpl': self.output_template,
@@ -470,9 +687,16 @@ class DownloadThread(QThread):
                     'merge_output_format': 'mp4',
                     'quiet': True,
                     'no_warnings': True,
-                    'proxy': get_proxy_url(),  # Add proxy
+                    'user_agent': user_agent,
+                    'http_headers': {
+                        'Accept-Language': 'en-US,en;q=0.9',
+                    },
                     **opts
                 }
+                
+                # Only add proxy if explicitly configured (not empty string)
+                if proxy_url:
+                    ydl_opts['proxy'] = proxy_url
                 
                 # 为B站URL添加referer头
                 if is_bilibili_url(self.url):
@@ -517,7 +741,29 @@ class DownloadThread(QThread):
                 return
             except Exception as e:
                 error_str = str(e)
-                print(f"DEBUG: DownloadThread - Attempt failed: {error_str[:100]}", flush=True)
+                print(f"DEBUG: DownloadThread - Attempt failed: {error_str[:200]}", flush=True)
                 continue
+        
+        # If YouTube download failed, try Invidious as fallback
+        if is_youtube_url(self.url):
+            video_id = get_youtube_video_id(self.url)
+            if video_id:
+                print(f"DEBUG: YouTube blocked, trying Invidious fallback...", flush=True)
+                self.status.emit("YouTube blocked, trying Invidious...")
+                try:
+                    # Create progress hook for Invidious download
+                    def invidious_progress(percent):
+                        self.progress.emit(percent)
+                    
+                    output_file, title = download_via_invidious(
+                        video_id, 
+                        self.output_template,
+                        invidious_progress,
+                        self.status.emit
+                    )
+                    self.finished.emit(f"Download complete: {title}")
+                    return
+                except Exception as inv_err:
+                    print(f"DEBUG: Invidious download failed: {inv_err}", flush=True)
         
         self.error.emit("Download failed. The video site may be blocking requests.")

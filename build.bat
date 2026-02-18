@@ -33,6 +33,11 @@ call venv\Scripts\activate.bat
 :: Install dependencies
 echo [2/6] Installing dependencies...
 pip install --upgrade pip
+
+:: Install yt-dlp nightly for better YouTube support
+echo Installing yt-dlp nightly (latest fixes for YouTube)...
+pip install -U --pre yt-dlp
+
 pip install -r requirements.txt
 if %errorlevel% neq 0 (
     echo [ERROR] Failed to install dependencies.

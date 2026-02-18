@@ -237,7 +237,7 @@ class MainWindow(QMainWindow):
             translator.get('format_720p'),
             translator.get('format_480p'),
             translator.get('format_mp3')
-        ])
+        ]) 
         self.format_combo.setMinimumHeight(35)
         
         # Folder selection
@@ -607,6 +607,12 @@ class MainWindow(QMainWindow):
                     "This may be due to YouTube server response time."
                 )
     
+    def truncate_title(self, title, max_len=32):
+        """Truncate title to max_len characters (for Chinese)"""
+        if len(title) <= max_len:
+            return title
+        return title[:max_len] + "..."
+    
     def on_fetch_complete(self, info):
         # Stop timers
         self.progress_timer.stop()
@@ -619,7 +625,7 @@ class MainWindow(QMainWindow):
             # It's a playlist
             count = len(info['entries'])
             self.preview_label.setText(
-                f"🎬 Playlist: {info['title']}\n"
+                f"🎬 Playlist: {self.truncate_title(info['title'])}\n"
                 f"📊 Videos: {count}\n"
                 f"👤 Uploader: {info.get('uploader', 'Unknown')}"
             )
@@ -632,7 +638,7 @@ class MainWindow(QMainWindow):
             duration_min = duration_sec_int // 60
             duration_sec = duration_sec_int % 60
             self.preview_label.setText(
-                f"🎬 Title: {info['title']}\n"
+                f"🎬 Title: {self.truncate_title(info['title'])}\n"
                 f"⏱️ Duration: {duration_min}:{duration_sec:02d}\n"
                 f"👤 Uploader: {info.get('uploader', 'Unknown')}\n"
                 f"👁️ Views: {info.get('view_count', 'N/A')}"
@@ -673,15 +679,18 @@ class MainWindow(QMainWindow):
             self.set_status("Network error. Check your connection.", is_error=True)
             self.status_label.setToolTip(error)
             
-        elif "Network is unreachable" in error or "Errno 101" in error or "system proxy" in error.lower():
+        elif "Network is unreachable" in error or "Errno 101" in error or "system proxy" in error.lower() or "blocking" in error.lower():
             # Direct network error or proxy issue
             self.set_status("Network/Proxy issue. Check your VPN/proxy settings.", is_error=True)
-            self.status_label.setToolTip("Cannot connect to the video site. Since your Firefox uses system proxy settings:\n\n"
-                "1. Your Clash VPN may be blocking the site API\n"
-                "2. Try disabling Clash VPN temporarily\n"
-                "3. Or configure Clash to allow the site API access\n"
-                "4. Check if the site works in Firefox first\n"
-                "5. Try a different network without VPN\n\n"
+            self.status_label.setToolTip("Cannot connect to the video site (blocking requests detected).\n\n"
+                "This is likely because:\n"
+                "1. Your VPN/Clash is blocking YouTube/Invidious\n"
+                "2. Your network has firewall restrictions\n\n"
+                "Solutions:\n"
+                "- Disable VPN/Clash temporarily and try again\n"
+                "- Configure VPN to allow youtube.com and invidious instances\n"
+                "- Check if the video plays in Firefox browser\n"
+                "- Try a different network (e.g., mobile hotspot)\n\n"
                 "Error: " + error[:200])
                 
         else:
@@ -713,11 +722,11 @@ class MainWindow(QMainWindow):
         }
         format_spec = format_map[self.format_combo.currentText()]
         
-        # Prepare output template
+        # Prepare output template - limit title length to 80 chars to avoid file name too long error
         if self.is_playlist:
-            output_template = f'{self.output_dir}/%(playlist_title)s/%(title)s.%(ext)s'
+            output_template = f'{self.output_dir}/%(playlist_title)s/%(title).80s.%(ext)s'
         else:
-            output_template = f'{self.output_dir}/%(title)s.%(ext)s'
+            output_template = f'{self.output_dir}/%(title).80s.%(ext)s'
             
         self.download_thread = DownloadThread(url, format_spec, output_template)
         self.download_thread.progress.connect(self.update_progress)
