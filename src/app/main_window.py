@@ -444,17 +444,17 @@ class MainWindow(QMainWindow):
         # Validate port
         if proxy_type != translator.get('settings_proxy_none'):
             if not proxy_host:
-                QMessageBox.warning(self, "Warning", "Please enter proxy host")
+                self.set_status("Please enter proxy host", is_error=True)
                 return
             if not proxy_port:
-                QMessageBox.warning(self, "Warning", "Please enter proxy port")
+                self.set_status("Please enter proxy port", is_error=True)
                 return
             try:
                 port = int(proxy_port)
                 if port < 1 or port > 65535:
                     raise ValueError
             except ValueError:
-                QMessageBox.warning(self, "Warning", "Please enter a valid port number (1-65535)")
+                self.set_status("Please enter a valid port number (1-65535)", is_error=True)
                 return
         
         # Save settings
@@ -462,7 +462,7 @@ class MainWindow(QMainWindow):
         self.settings.setValue("proxy_host", proxy_host)
         self.settings.setValue("proxy_port", proxy_port)
         
-        QMessageBox.information(self, "Success", "Proxy settings saved successfully")
+        self.set_status("Proxy settings saved successfully")
     
     def update_settings_tab(self):
         """Update settings tab content when language changes"""
@@ -504,6 +504,19 @@ class MainWindow(QMainWindow):
         # Update horse image for theme
         self.load_horse_image()
     
+    def set_status(self, message, is_error=False):
+        """Update status label with message and color"""
+        if hasattr(self, 'status_label'):
+            self.status_label.setText(message)
+            if is_error:
+                self.status_label.setStyleSheet("QLabel#status_label { color: #e74c3c; font-size: 14px; font-weight: bold; padding: 5px; }")
+            else:
+                # Use theme-aware color
+                if self.current_theme == "light":
+                    self.status_label.setStyleSheet("QLabel#status_label { color: #2980b9; font-size: 14px; font-weight: bold; padding: 5px; }")
+                else:
+                    self.status_label.setStyleSheet("QLabel#status_label { color: #3498db; font-size: 14px; font-weight: bold; padding: 5px; }")
+    
     def load_horse_image(self):
         """Load and display the horse image with appropriate scaling"""
         if not hasattr(self, 'horse_image_label'):
@@ -540,7 +553,7 @@ class MainWindow(QMainWindow):
     def fetch_video_info(self):
         url = self.url_input.text().strip()
         if not url:
-            QMessageBox.warning(self, translator.get('error_no_url'), translator.get('error_no_url'))
+            self.set_status(translator.get('error_no_url'), is_error=True)
             return
             
         # Start progress updates
@@ -638,31 +651,32 @@ class MainWindow(QMainWindow):
         
         # Show a shorter error in status
         short_error = error[:100] + "..." if len(error) > 100 else error
-        self.status_label.setText(f"Error: {short_error}")
+        self.set_status(f"Error: {short_error}", is_error=True)
         
         # Show appropriate error message based on error type
         if "Sign in to confirm you're not a bot" in error:
-            QMessageBox.warning(self, translator.get('error_network'), 
-                "The video site is blocking requests. Please:\n\n"
+            self.set_status("Please log into the video site in browser and try again", is_error=True)
+            self.status_label.setToolTip("The video site is blocking requests. Please:\n\n"
                 "1. Make sure you're logged into the site in Firefox\n"
                 "2. Try again (the app will use Firefox cookies)\n\n"
                 "If this doesn't work, the site may be blocking your IP/VPN.")
                 
         elif "JavaScript challenge" in error or "Deno runtime" in error:
             # JS challenge error - needs Deno installation
-            QMessageBox.critical(self, translator.get('error_deno'),
-                "The video site requires JavaScript challenge solving.\n\n" +
+            self.set_status("Deno is required for this video. Please install Deno.", is_error=True)
+            self.status_label.setToolTip("The video site requires JavaScript challenge solving.\n\n" +
                 error + "\n\n"
                 "After installing Deno, restart the app.")
             
         elif "Network connection failed" in error or "Connection timed out" in error:
             # Network-related error from download_manager
-            QMessageBox.critical(self, "Network Error", error)
+            self.set_status("Network error. Check your connection.", is_error=True)
+            self.status_label.setToolTip(error)
             
         elif "Network is unreachable" in error or "Errno 101" in error or "system proxy" in error.lower():
             # Direct network error or proxy issue
-            QMessageBox.critical(self, "Network/Proxy Issue",
-                "Cannot connect to the video site. Since your Firefox uses system proxy settings:\n\n"
+            self.set_status("Network/Proxy issue. Check your VPN/proxy settings.", is_error=True)
+            self.status_label.setToolTip("Cannot connect to the video site. Since your Firefox uses system proxy settings:\n\n"
                 "1. Your Clash VPN may be blocking the site API\n"
                 "2. Try disabling Clash VPN temporarily\n"
                 "3. Or configure Clash to allow the site API access\n"
@@ -672,7 +686,8 @@ class MainWindow(QMainWindow):
                 
         else:
             # Other error
-            QMessageBox.critical(self, "Error", f"Failed to fetch video:\n{error[:300]}")
+            self.set_status("Failed to fetch video", is_error=True)
+            self.status_label.setToolTip(f"Failed to fetch video:\n{error[:300]}")
         
     def select_folder(self):
         folder = QFileDialog.getExistingDirectory(self, translator.get('folder_btn'))
@@ -683,7 +698,7 @@ class MainWindow(QMainWindow):
             
     def start_download(self):
         if not self.current_info:
-            QMessageBox.warning(self, translator.get('error_fetch_first'), translator.get('error_fetch_first'))
+            self.set_status(translator.get('error_fetch_first'), is_error=True)
             return
             
         url = self.url_input.text().strip()
@@ -720,15 +735,14 @@ class MainWindow(QMainWindow):
     def on_download_complete(self, message):
         self.download_btn.setEnabled(True)
         self.fetch_btn.setEnabled(True)
-        self.status_label.setText(message)
+        self.set_status(message)
         self.progress_bar.setValue(100)
-        QMessageBox.information(self, translator.get('status_complete'), translator.get('status_complete'))
         
     def on_download_error(self, error):
         self.download_btn.setEnabled(True)
         self.fetch_btn.setEnabled(True)
-        self.status_label.setText(f"{translator.get('status_error')}{error}")
-        QMessageBox.critical(self, translator.get('status_error'), f"Download failed:\n{error}")
+        self.set_status(f"{translator.get('status_error')}{error}", is_error=True)
+        self.status_label.setToolTip(f"Download failed:\n{error}")
     
     def update_ui_text(self):
         """Update all UI text when language changes"""

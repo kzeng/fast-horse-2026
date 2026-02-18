@@ -32,9 +32,16 @@ A powerful, feature-rich desktop application for downloading videos from YouTube
 ## 🚀 **Quick Start**
 
 ### **Download Pre-built Executable**
+
+#### **Linux**
 1. Download `Fast-Horse-2026-linux-x64.tar.gz` from releases
 2. Extract: `tar -xzf Fast-Horse-2026-linux-x64.tar.gz`
 3. Run: `./Fast-Horse-2026`
+
+#### **Windows**
+1. Download `Fast-Horse-2026-v0.0.2-win-x64.zip` from releases
+2. Extract the ZIP file
+3. Run: Double-click `Fast-Horse-2026.exe` or use `run.bat`
 
 ### **From Source**
 ```bash
@@ -150,6 +157,8 @@ Configure proxy through Settings tab → Proxy Settings:
 ## 🔧 **Development**
 
 ### **Building from Source**
+
+#### **Linux / macOS**
 ```bash
 # Install build dependencies
 pip install pyinstaller
@@ -160,6 +169,20 @@ pip install pyinstaller
 # Output: dist/Fast-Horse-2026
 # Package: Fast-Horse-2026-linux-x64.tar.gz
 ```
+
+#### **Windows**
+```batch
+# Install build dependencies
+pip install pyinstaller
+
+# Build executable
+build.bat
+
+# Output: dist\Fast-Horse-2026.exe
+# Package: Fast-Horse-2026-v0.0.2-win-x64.zip
+```
+
+**Note**: The Windows build script (`build.bat`) will automatically download FFmpeg and Deno.
 
 ### **Adding New Translations**
 1. Edit `src/app/translations.py`
@@ -223,9 +246,16 @@ MIT License - see [LICENSE](LICENSE) file for details.
 ## 🇨🇳 **中文文档**
 
 ### **快速开始**
+
+#### **Linux**
 1. **下载预编译版本**: 从发布页面下载 `Fast-Horse-2026-linux-x64.tar.gz`
 2. **解压**: `tar -xzf Fast-Horse-2026-linux-x64.tar.gz`
 3. **运行**: `./Fast-Horse-2026`
+
+#### **Windows**
+1. **下载预编译版本**: 从发布页面下载 `Fast-Horse-2026-v0.0.2-win-x64.zip`
+2. **解压**: 解压 ZIP 文件
+3. **运行**: 双击 `Fast-Horse-2026.exe` 或运行 `run.bat`
 
 ### **从源码运行**
 ```bash

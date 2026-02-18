@@ -133,8 +133,10 @@ QLabel#preview_label {
 
 /* Status label */
 QLabel#status_label {
-    color: #aaaaaa;
-    font-style: italic;
+    color: #3498db;
+    font-size: 14px;
+    font-weight: bold;
+    padding: 5px;
 }
 
 /* Horse image */

@@ -1,23 +1,12 @@
 # -*- mode: python ; coding: utf-8 -*-
 
-import sys
-
-# Base hidden imports (cross-platform)
-base_hiddenimports = [
-    'PySide6', 'PySide6.QtCore', 'PySide6.QtGui', 'PySide6.QtWidgets',
-    'yt_dlp', 'secretstorage', 'cryptography', 'cffi', 'jeepney'
-]
-
-# Windows-specific hidden imports
-if sys.platform == 'win32':
-    base_hiddenimports.extend(['win32api', 'win32con', 'win32gui', 'win32process'])
 
 a = Analysis(
     ['src/main.py'],
     pathex=[],
     binaries=[],
     datas=[('src/app/style.qss', 'app'), ('src/app/style_light.qss', 'app'), ('horse2026.jpeg', '.')],
-    hiddenimports=base_hiddenimports,
+    hiddenimports=['PySide6', 'PySide6.QtCore', 'PySide6.QtGui', 'PySide6.QtWidgets', 'yt_dlp', 'secretstorage', 'cryptography', 'cffi', 'jeepney'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],

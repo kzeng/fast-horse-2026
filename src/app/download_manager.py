@@ -14,6 +14,33 @@ def get_browser_cookies_list():
         # Linux browsers
         return ['firefox', 'chrome', 'brave', 'opera']
 
+def cleanup_temp_files(output_template):
+    """Clean up temporary .part files after download"""
+    import glob
+    import os
+    
+    if not output_template:
+        return
+    
+    # Get directory from output_template
+    output_dir = os.path.dirname(output_template)
+    if not output_dir:
+        output_dir = '.'
+    
+    # Find and remove .part-Frag* files
+    patterns = [
+        os.path.join(output_dir, '*.part-Frag*'),
+        os.path.join(output_dir, '*.ytdl'),
+    ]
+    
+    for pattern in patterns:
+        for temp_file in glob.glob(pattern):
+            try:
+                os.remove(temp_file)
+                print(f"DEBUG: Cleaned up temp file: {temp_file}", flush=True)
+            except Exception as e:
+                print(f"DEBUG: Failed to remove temp file {temp_file}: {e}", flush=True)
+
 def get_proxy_url():
     """Get proxy URL from application settings"""
     settings = QSettings("Fast-Horse-2026", "App")
@@ -482,6 +509,10 @@ class DownloadThread(QThread):
                     
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     ydl.download([self.url])
+                
+                # Clean up temporary files after successful download
+                cleanup_temp_files(self.output_template)
+                
                 self.finished.emit("Download complete!")
                 return
             except Exception as e:
