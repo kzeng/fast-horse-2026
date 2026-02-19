@@ -29,6 +29,7 @@ class Translator:
             'settings_theme': "Theme",
             'settings_proxy': "Proxy Settings",
             'settings_about': "About",
+            'settings_show_thumbnail': "Show Thumbnail",
 
             # Language options
             'language_english': "English",
@@ -117,6 +118,7 @@ class Translator:
             'settings_theme': "主题",
             'settings_proxy': "代理设置",
             'settings_about': "关于",
+            'settings_show_thumbnail': "显示封面",
 
             # Language options
             'language_english': "English",

@@ -1,10 +1,11 @@
 from PySide6.QtWidgets import (
-    QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QPushButton, 
+    QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QLineEdit, QPushButton, 
     QLabel, QComboBox, QProgressBar, QFileDialog, QMessageBox,
-    QTabWidget, QGroupBox, QRadioButton, QFormLayout, QTextEdit
+    QTabWidget, QGroupBox, QRadioButton, QFormLayout, QTextEdit, QCheckBox
 )
-from PySide6.QtCore import Qt, QSettings, QTimer, Signal, QPoint
+from PySide6.QtCore import Qt, QSettings, QTimer, Signal, QPoint, QUrl
 from PySide6.QtGui import QFont, QPixmap
+from PySide6.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkReply
 import os
 import sys
 from .download_manager import FetchInfoThread, DownloadThread
@@ -126,6 +127,9 @@ class MainWindow(QMainWindow):
         self.current_info = None
         self.is_playlist = False
         
+        # Network manager for thumbnail download
+        self.network_manager = QNetworkAccessManager(self)
+        
         # Settings
         self.settings = QSettings("Fast-Horse-2026", "App")
         self.output_dir = self.settings.value("output_dir", ".")
@@ -184,6 +188,11 @@ class MainWindow(QMainWindow):
         # Set container as central widget
         self.setCentralWidget(container)
         
+        # Initialize thumbnail visibility based on settings
+        saved_show_thumbnail = self.settings.value("show_thumbnail", "true")
+        if hasattr(self, 'thumbnail_label'):
+            self.thumbnail_label.setVisible(saved_show_thumbnail != "false")
+        
     def create_main_tab(self):
         """Create the main downloader tab"""
         tab = QWidget()
@@ -219,11 +228,27 @@ class MainWindow(QMainWindow):
         url_layout.addWidget(self.fetch_btn)
         layout.addLayout(url_layout)
         
-        # Preview Section
+        # Preview Section - with thumbnail
+        preview_container = QWidget()
+        preview_layout = QHBoxLayout(preview_container)
+        preview_layout.setContentsMargins(5, 5, 5, 5)
+        preview_layout.setSpacing(15)
+        
+        # Thumbnail (left side)
+        self.thumbnail_label = QLabel()
+        self.thumbnail_label.setObjectName("thumbnail_label")
+        self.thumbnail_label.setFixedSize(160, 90)
+        self.thumbnail_label.setAlignment(Qt.AlignCenter)
+        self.thumbnail_label.setStyleSheet("background-color: #808080; border-radius: 5px;")
+        preview_layout.addWidget(self.thumbnail_label)
+        
+        # Video info (right side)
         self.preview_label = QLabel(translator.get('preview_label'))
         self.preview_label.setObjectName("preview_label")
-        self.preview_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(self.preview_label)
+        self.preview_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        preview_layout.addWidget(self.preview_label, 1)
+        
+        layout.addWidget(preview_container)
         
         # Format Selection
         format_layout = QHBoxLayout()
@@ -278,11 +303,13 @@ class MainWindow(QMainWindow):
     def create_settings_tab(self):
         """Create the settings tab with language, theme, proxy, and about sections"""
         tab = QWidget()
-        layout = QVBoxLayout(tab)
-        layout.setSpacing(15)
-        layout.setContentsMargins(20, 20, 20, 20)
         
-        # Language Section
+        # Use grid layout for two-column layout
+        grid_layout = QGridLayout(tab)
+        grid_layout.setSpacing(15)
+        grid_layout.setContentsMargins(20, 20, 20, 20)
+        
+        # Language Section (row 0, col 0)
         self.language_group = QGroupBox(translator.get('settings_language'))
         language_layout = QVBoxLayout()
         
@@ -300,9 +327,9 @@ class MainWindow(QMainWindow):
         language_layout.addWidget(self.english_radio)
         language_layout.addWidget(self.chinese_radio)
         self.language_group.setLayout(language_layout)
-        layout.addWidget(self.language_group)
+        grid_layout.addWidget(self.language_group, 0, 0)
         
-        # Theme Section
+        # Theme Section (row 0, col 1)
         self.theme_group = QGroupBox(translator.get('settings_theme'))
         theme_layout = QVBoxLayout()
         
@@ -320,9 +347,9 @@ class MainWindow(QMainWindow):
         theme_layout.addWidget(self.dark_radio)
         theme_layout.addWidget(self.light_radio)
         self.theme_group.setLayout(theme_layout)
-        layout.addWidget(self.theme_group)
+        grid_layout.addWidget(self.theme_group, 0, 1)
         
-        # Proxy Settings Section
+        # Proxy Settings Section (row 1, col 0)
         self.proxy_group = QGroupBox(translator.get('settings_proxy'))
         proxy_layout = QFormLayout()
         
@@ -351,9 +378,24 @@ class MainWindow(QMainWindow):
         proxy_layout.addRow("", self.save_proxy_btn)
         
         self.proxy_group.setLayout(proxy_layout)
-        layout.addWidget(self.proxy_group)
+        grid_layout.addWidget(self.proxy_group, 1, 0)
         
-        # About Section
+        # Show Thumbnail Section (row 1, col 1)
+        self.thumbnail_group = QGroupBox(translator.get('settings_show_thumbnail'))
+        thumbnail_layout = QVBoxLayout()
+        
+        self.show_thumbnail_checkbox = QCheckBox(translator.get('settings_show_thumbnail'))
+        # Default is checked
+        saved_show_thumbnail = self.settings.value("show_thumbnail", "true")
+        self.show_thumbnail_checkbox.setChecked(saved_show_thumbnail != "false")
+        
+        self.show_thumbnail_checkbox.stateChanged.connect(self.toggle_thumbnail)
+        
+        thumbnail_layout.addWidget(self.show_thumbnail_checkbox)
+        self.thumbnail_group.setLayout(thumbnail_layout)
+        grid_layout.addWidget(self.thumbnail_group, 1, 1)
+        
+        # About Section (row 2, spans both columns)
         self.about_group = QGroupBox(translator.get('settings_about'))
         
         # Use horizontal layout for about section (text on left, image on right)
@@ -386,15 +428,24 @@ class MainWindow(QMainWindow):
         self.load_horse_image()
         
         self.about_group.setLayout(about_main_layout)
-        layout.addWidget(self.about_group)
+        grid_layout.addWidget(self.about_group, 2, 0, 1, 2)
         
         # Spacer
-        layout.addStretch()
+        grid_layout.setRowStretch(3, 1)
         
         # Load current proxy settings
         self.load_proxy_settings()
         
         return tab
+    
+    def toggle_thumbnail(self, state):
+        """Toggle thumbnail display based on checkbox"""
+        show = (state == 2)  # 2 = Checked
+        self.settings.setValue("show_thumbnail", str(show).lower())
+        
+        # Show/hide thumbnail immediately
+        if hasattr(self, 'thumbnail_label'):
+            self.thumbnail_label.setVisible(show)
     
     def change_language(self, lang_code):
         """Change application language"""
@@ -478,6 +529,9 @@ class MainWindow(QMainWindow):
             self.proxy_group.setTitle(translator.get('settings_proxy'))
             self.save_proxy_btn.setText(translator.get('settings_save'))
             
+            self.thumbnail_group.setTitle(translator.get('settings_show_thumbnail'))
+            self.show_thumbnail_checkbox.setText(translator.get('settings_show_thumbnail'))
+            
             self.about_group.setTitle(translator.get('settings_about'))
             about_text = f"{translator.get('about_description')}\n\n{translator.get('about_author')}\n{translator.get('about_version')} v{__version__}"
             if hasattr(self, 'about_text'):
@@ -489,7 +543,9 @@ class MainWindow(QMainWindow):
             style_file = 'style.qss'
         else:
             style_file = 'style_light.qss'
-            
+        
+        self.current_theme = theme
+        
         # Get the directory of this module
         current_dir = os.path.dirname(os.path.abspath(__file__))
         style_path = os.path.join(current_dir, style_file)
@@ -629,12 +685,13 @@ class MainWindow(QMainWindow):
                 f"📊 Videos: {count}\n"
                 f"👤 Uploader: {info.get('uploader', 'Unknown')}"
             )
+            self.thumbnail_label.setText("📁")
+            self.thumbnail_label.setStyleSheet("background-color: #808080; border-radius: 5px; color: white;")
             self.is_playlist = True
         else:
             # Single video
             duration = info.get('duration', 0)
-            # 修复：duration可能是浮点数，需要转换为整数
-            duration_sec_int = int(duration)
+            duration_sec_int = int(duration or 0)
             duration_min = duration_sec_int // 60
             duration_sec = duration_sec_int % 60
             self.preview_label.setText(
@@ -645,8 +702,67 @@ class MainWindow(QMainWindow):
             )
             self.is_playlist = False
             
-        self.status_label.setText(translator.get('status_ready'))
+            # Download thumbnail (only if enabled in settings)
+            show_thumbnail = self.settings.value("show_thumbnail", "true") != "false"
+            if show_thumbnail:
+                thumbnail_url = info.get('thumbnail') or info.get('thumbnails', [{}])[0].get('url') if info.get('thumbnails') else None
+                print(f"DEBUG: Thumbnail URL: {thumbnail_url}", flush=True)
+                if thumbnail_url:
+                    self.download_thumbnail(thumbnail_url)
+                else:
+                    self.thumbnail_label.setText("🖼️")
+                    self.thumbnail_label.setStyleSheet("background-color: #808080; border-radius: 5px; color: white;")
+            else:
+                self.thumbnail_label.setText("")
+                self.thumbnail_label.setStyleSheet("background-color: #808080; border-radius: 5px;")
+        
+        self.set_status(translator.get('status_ready') or "Ready")
         self.download_btn.setEnabled(True)
+    
+    def download_thumbnail(self, url):
+        """Download and display video thumbnail"""
+        self.thumbnail_label.setText("⏳")
+        self.thumbnail_label.setStyleSheet("background-color: #808080; border-radius: 5px; color: white;")
+        
+        request = QNetworkRequest(QUrl(url))
+        request.setHeader(QNetworkRequest.KnownHeaders.UserAgentHeader, 
+                         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
+        
+        # Set proxy if configured
+        proxy_url = self.get_proxy_url()
+        if proxy_url:
+            from PySide6.QtNetwork import QNetworkProxy
+            self.network_manager.setProxy(QNetworkProxy(QNetworkProxy.HttpProxy, 
+                                                        proxy_url.split('://')[1].split(':')[0] if '://' in proxy_url else proxy_url.split(':')[0],
+                                                        int(proxy_url.split(':')[-1]) if ':' in proxy_url else 8080))
+        
+        reply = self.network_manager.get(request)
+        reply.finished.connect(lambda: self.on_thumbnail_loaded(reply))
+    
+    def get_proxy_url(self):
+        """Get proxy URL from settings"""
+        from .download_manager import get_proxy_url as dl_get_proxy_url
+        return dl_get_proxy_url()
+    
+    def on_thumbnail_loaded(self, reply):
+        """Handle thumbnail download complete"""
+        reply.deleteLater()
+        
+        if reply.error() == QNetworkReply.NetworkError.NoError:
+            data = reply.readAll()
+            pixmap = QPixmap()
+            if pixmap.loadFromData(data):
+                # Scale to fit while maintaining aspect ratio
+                scaled = pixmap.scaled(160, 90, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                self.thumbnail_label.setPixmap(scaled)
+                self.thumbnail_label.setStyleSheet("border-radius: 5px;")
+            else:
+                self.thumbnail_label.setText("🖼️")
+                self.thumbnail_label.setStyleSheet("background-color: #808080; border-radius: 5px; color: white;")
+        else:
+            print(f"DEBUG: Thumbnail download error: {reply.error()}", flush=True)
+            self.thumbnail_label.setText("🖼️")
+            self.thumbnail_label.setStyleSheet("background-color: #808080; border-radius: 5px; color: white;")
         
     def on_fetch_error(self, error):
         # Stop timers
@@ -712,15 +828,15 @@ class MainWindow(QMainWindow):
             
         url = self.url_input.text().strip()
         
-        # Map format selection to yt-dlp format spec
-        format_map = {
-            "Best Available": "best",
-            "MP4 1080p": "bestvideo[height<=1080]+bestaudio/best",
-            "MP4 720p": "bestvideo[height<=720]+bestaudio/best", 
-            "MP4 480p": "bestvideo[height<=480]+bestaudio/best",
-            "MP3 Audio": "bestaudio/best"
-        }
-        format_spec = format_map[self.format_combo.currentText()]
+        # Map format selection to yt-dlp format spec (using index)
+        format_specs = [
+            "best",  # Best Available
+            "bestvideo[height<=1080]+bestaudio/best",  # MP4 1080p
+            "bestvideo[height<=720]+bestaudio/best",  # MP4 720p
+            "bestvideo[height<=480]+bestaudio/best",  # MP4 480p
+            "bestaudio/best"  # MP3 Audio
+        ]
+        format_spec = format_specs[self.format_combo.currentIndex()]
         
         # Prepare output template - limit title length to 80 chars to avoid file name too long error
         if self.is_playlist:
