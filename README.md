@@ -23,7 +23,9 @@ A powerful, feature-rich desktop application for downloading videos from YouTube
 - **🔧 Configurable Proxy**: SOCKS5/HTTP proxy support with integrated settings
 - **🎨 Theme Switching**: Dark/Light theme toggle with preference saving
 - **📱 Tab Interface**: Modern tab layout (Main/Settings) for better user experience
-- **⚡ Performance**: Multi-threaded downloads with progress tracking
+- **⚡ Performance**: Multi-threaded downloads with configurable thread count
+- **🖼️ Thumbnail Preview**: Display video thumbnail in preview area
+- **📶 Resumable Downloads**: Automatic resume support for interrupted downloads
 
 ## 📸 **Screenshots**
 
@@ -98,6 +100,8 @@ For MP4 downloads with audio, install FFmpeg:
 - **Language Switch**: Settings tab → Language section → English/中文
 - **Proxy Settings**: Settings tab → Proxy Settings section
 - **Theme Switch**: Settings tab → Theme section → Dark/Light
+- **Download Threads**: Settings tab → Misc section → Select 1/2/4/8 threads
+- **Show Thumbnail**: Settings tab → Misc section → Toggle thumbnail display
 - **About Info**: Settings tab → About section with author and version
 - **Playlist Download**: Paste playlist URL, all videos download to playlist folder
 
@@ -131,6 +135,7 @@ The application features a modern tab-based interface:
   - **Language Section**: Switch between English/中文
   - **Theme Section**: Toggle between Dark/Light themes
   - **Proxy Settings**: Configure SOCKS5/HTTP/No proxy
+  - **Misc Section**: Download threads (1/2/4/8), show thumbnail toggle
   - **About Section**: Author info (Zengkai001@qq.com), version (0.0.2), and application logo
 
 ### **Bilibili Support**
@@ -284,6 +289,7 @@ python main.py
    - **语言设置**: 切换英文/中文界面
    - **主题设置**: 切换深色/浅色主题
    - **代理设置**: 配置SOCKS5/HTTP代理
+   - **杂项设置**: 下载线程数（1/2/4/8）、显示封面开关
    - **关于信息**: 作者Zengkai001@qq.com，版本0.0.2，应用图标
 
 ### **B站支持**
@@ -299,6 +305,9 @@ python main.py
 - **代理配置**: 支持SOCKS5/HTTP代理，解决网络限制
 - **主题切换**: 深色/浅色主题，保护眼睛
 - **播放列表支持**: 下载整个播放列表，自动创建文件夹
+- **视频封面**: 预览区域显示视频缩略图
+- **多线程下载**: 支持1/2/4/8线程下载
+- **断点续传**: 支持中断后继续下载
 
 ### **常见问题**
 1. **"机器人检测"**: 先在浏览器登录视频网站，应用会使用浏览器cookies

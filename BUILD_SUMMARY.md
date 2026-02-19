@@ -15,9 +15,32 @@
 - **Language Section**: Radio buttons for English/中文 switching
 - **Theme Section**: Radio buttons for Dark/Light theme toggling
 - **Proxy Settings**: Integrated SOCKS5/HTTP/None configuration with validation
-- **About Section**: Author info (Zengkai001@qq.com) and version (0.0.1)
+- **Misc Section**: Download threads (1/2/4/8), show thumbnail toggle
+- **About Section**: Author info (Zengkai001@qq.com) and version (0.0.2)
 
-### 3. **Chinese/English UI Switching**
+### 3. **Video Thumbnail Preview**
+- **Thumbnail Display**: Shows video thumbnail in preview area (160x90)
+- **Async Download**: Thumbnail fetched after video info is retrieved
+- **Proxy Support**: Uses same proxy settings as video download
+- **Toggle Option**: Can be enabled/disabled in Misc settings
+
+### 4. **Multi-threaded Download**
+- **Configurable Threads**: Support for 1/2/4/8 concurrent threads
+- **yt-dlp Integration**: Uses `concurrent_fragment_download` option
+- **Performance**: Faster downloads for large videos with multiple segments
+- **Persistence**: Thread count saved to QSettings
+
+### 5. **Download Progress Status Colors**
+- **Normal Status**: Blue color for normal operations
+- **Error Status**: Red color for error messages only
+- **Fixed**: Status no longer stays red after successful fetch
+
+### 6. **Resumable Downloads**
+- **Automatic Resume**: yt-dlp uses `-c` flag by default
+- **Retry Logic**: Default 10 retries for failed downloads
+- **File Access**: Automatic retry on file access errors
+
+### 7. **Chinese/English UI Switching**
 - **Translation System**: Complete bilingual support with `translations.py`
 - **Dynamic Updates**: UI text updates instantly when language changes
 - **Tab Integration**: Tab titles and settings content update with language
@@ -164,7 +187,7 @@ tar -tzf Fast-Horse-2026-linux-x64.tar.gz
 
 ---
 
-**Build Date**: February 17, 2026  
-**Version**: Fast-Horse-2026 v0.0.1 (tab interface version)  
+**Build Date**: February 19, 2026  
+**Version**: Fast-Horse-2026 v0.0.2 (thumbnail + threads + status fix version)  
 **Platform**: Linux x64  
 **Status**: ✅ Ready for distribution
