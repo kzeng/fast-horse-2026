@@ -30,6 +30,8 @@ class Translator:
             'settings_proxy': "Proxy Settings",
             'settings_about': "About",
             'settings_show_thumbnail': "Show Thumbnail",
+            'settings_threads': "Download Threads",
+            'settings_misc': "Misc.",
 
             # Language options
             'language_english': "English",
@@ -119,6 +121,8 @@ class Translator:
             'settings_proxy': "代理设置",
             'settings_about': "关于",
             'settings_show_thumbnail': "显示封面",
+            'settings_threads': "下载线程数",
+            'settings_misc': "杂项",
 
             # Language options
             'language_english': "English",

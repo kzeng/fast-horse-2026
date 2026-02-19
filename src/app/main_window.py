@@ -239,7 +239,7 @@ class MainWindow(QMainWindow):
         self.thumbnail_label.setObjectName("thumbnail_label")
         self.thumbnail_label.setFixedSize(160, 90)
         self.thumbnail_label.setAlignment(Qt.AlignCenter)
-        self.thumbnail_label.setStyleSheet("background-color: #808080; border-radius: 5px;")
+        self.thumbnail_label.setStyleSheet("background-color: #CCCCCC; border-radius: 5px;")
         preview_layout.addWidget(self.thumbnail_label)
         
         # Video info (right side)
@@ -380,19 +380,29 @@ class MainWindow(QMainWindow):
         self.proxy_group.setLayout(proxy_layout)
         grid_layout.addWidget(self.proxy_group, 1, 0)
         
-        # Show Thumbnail Section (row 1, col 1)
-        self.thumbnail_group = QGroupBox(translator.get('settings_show_thumbnail'))
-        thumbnail_layout = QVBoxLayout()
+        # Misc. Section (row 1, col 1)
+        self.thumbnail_group = QGroupBox(translator.get('settings_misc'))
+        misc_layout = QFormLayout()
         
-        self.show_thumbnail_checkbox = QCheckBox(translator.get('settings_show_thumbnail'))
+        # Show thumbnail checkbox
+        self.show_thumbnail_checkbox = QCheckBox()
         # Default is checked
         saved_show_thumbnail = self.settings.value("show_thumbnail", "true")
         self.show_thumbnail_checkbox.setChecked(saved_show_thumbnail != "false")
-        
         self.show_thumbnail_checkbox.stateChanged.connect(self.toggle_thumbnail)
+        misc_layout.addRow(translator.get('settings_show_thumbnail'), self.show_thumbnail_checkbox)
         
-        thumbnail_layout.addWidget(self.show_thumbnail_checkbox)
-        self.thumbnail_group.setLayout(thumbnail_layout)
+        # Download threads
+        self.threads_combo = QComboBox()
+        self.threads_combo.addItems(["1", "2", "4", "8"])
+        saved_threads = self.settings.value("download_threads", "1")
+        index = self.threads_combo.findText(saved_threads)
+        if index >= 0:
+            self.threads_combo.setCurrentIndex(index)
+        self.threads_combo.currentIndexChanged.connect(self.save_threads_setting)
+        misc_layout.addRow(translator.get('settings_threads') + ":", self.threads_combo)
+        
+        self.thumbnail_group.setLayout(misc_layout)
         grid_layout.addWidget(self.thumbnail_group, 1, 1)
         
         # About Section (row 2, spans both columns)
@@ -446,6 +456,11 @@ class MainWindow(QMainWindow):
         # Show/hide thumbnail immediately
         if hasattr(self, 'thumbnail_label'):
             self.thumbnail_label.setVisible(show)
+    
+    def save_threads_setting(self, index):
+        """Save download threads setting"""
+        threads = self.threads_combo.currentText()
+        self.settings.setValue("download_threads", threads)
     
     def change_language(self, lang_code):
         """Change application language"""
@@ -529,8 +544,7 @@ class MainWindow(QMainWindow):
             self.proxy_group.setTitle(translator.get('settings_proxy'))
             self.save_proxy_btn.setText(translator.get('settings_save'))
             
-            self.thumbnail_group.setTitle(translator.get('settings_show_thumbnail'))
-            self.show_thumbnail_checkbox.setText(translator.get('settings_show_thumbnail'))
+            self.thumbnail_group.setTitle(translator.get('settings_misc'))
             
             self.about_group.setTitle(translator.get('settings_about'))
             about_text = f"{translator.get('about_description')}\n\n{translator.get('about_author')}\n{translator.get('about_version')} v{__version__}"
@@ -686,7 +700,7 @@ class MainWindow(QMainWindow):
                 f"👤 Uploader: {info.get('uploader', 'Unknown')}"
             )
             self.thumbnail_label.setText("📁")
-            self.thumbnail_label.setStyleSheet("background-color: #808080; border-radius: 5px; color: white;")
+            self.thumbnail_label.setStyleSheet("background-color: #CCCCCC; border-radius: 5px; color: white;")
             self.is_playlist = True
         else:
             # Single video
@@ -711,10 +725,10 @@ class MainWindow(QMainWindow):
                     self.download_thumbnail(thumbnail_url)
                 else:
                     self.thumbnail_label.setText("🖼️")
-                    self.thumbnail_label.setStyleSheet("background-color: #808080; border-radius: 5px; color: white;")
+                    self.thumbnail_label.setStyleSheet("background-color: #CCCCCC; border-radius: 5px; color: white;")
             else:
                 self.thumbnail_label.setText("")
-                self.thumbnail_label.setStyleSheet("background-color: #808080; border-radius: 5px;")
+                self.thumbnail_label.setStyleSheet("background-color: #CCCCCC; border-radius: 5px;")
         
         self.set_status(translator.get('status_ready') or "Ready")
         self.download_btn.setEnabled(True)
@@ -722,7 +736,7 @@ class MainWindow(QMainWindow):
     def download_thumbnail(self, url):
         """Download and display video thumbnail"""
         self.thumbnail_label.setText("⏳")
-        self.thumbnail_label.setStyleSheet("background-color: #808080; border-radius: 5px; color: white;")
+        self.thumbnail_label.setStyleSheet("background-color: #CCCCCC; border-radius: 5px; color: white;")
         
         request = QNetworkRequest(QUrl(url))
         request.setHeader(QNetworkRequest.KnownHeaders.UserAgentHeader, 
@@ -758,11 +772,11 @@ class MainWindow(QMainWindow):
                 self.thumbnail_label.setStyleSheet("border-radius: 5px;")
             else:
                 self.thumbnail_label.setText("🖼️")
-                self.thumbnail_label.setStyleSheet("background-color: #808080; border-radius: 5px; color: white;")
+                self.thumbnail_label.setStyleSheet("background-color: #CCCCCC; border-radius: 5px; color: white;")
         else:
             print(f"DEBUG: Thumbnail download error: {reply.error()}", flush=True)
             self.thumbnail_label.setText("🖼️")
-            self.thumbnail_label.setStyleSheet("background-color: #808080; border-radius: 5px; color: white;")
+            self.thumbnail_label.setStyleSheet("background-color: #CCCCCC; border-radius: 5px; color: white;")
         
     def on_fetch_error(self, error):
         # Stop timers
@@ -843,8 +857,11 @@ class MainWindow(QMainWindow):
             output_template = f'{self.output_dir}/%(playlist_title)s/%(title).80s.%(ext)s'
         else:
             output_template = f'{self.output_dir}/%(title).80s.%(ext)s'
+        
+        # Get download threads setting
+        threads = int(self.settings.value("download_threads", "1"))
             
-        self.download_thread = DownloadThread(url, format_spec, output_template)
+        self.download_thread = DownloadThread(url, format_spec, output_template, threads)
         self.download_thread.progress.connect(self.update_progress)
         self.download_thread.status.connect(self.status_label.setText)
         self.download_thread.finished.connect(self.on_download_complete)

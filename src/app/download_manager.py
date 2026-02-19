@@ -564,11 +564,12 @@ class DownloadThread(QThread):
     finished = Signal(str)
     error = Signal(str)
     
-    def __init__(self, url, format_spec, output_template):
+    def __init__(self, url, format_spec, output_template, threads=1):
         super().__init__()
         self.url = url
         self.format_spec = format_spec
         self.output_template = output_template
+        self.threads = threads
         
     def run(self):
         import os
@@ -691,6 +692,7 @@ class DownloadThread(QThread):
                     'http_headers': {
                         'Accept-Language': 'en-US,en;q=0.9',
                     },
+                    'concurrent_fragment_download': self.threads,
                     **opts
                 }
                 
