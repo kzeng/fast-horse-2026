@@ -43,7 +43,7 @@ class Translator:
 
             # About section
             'about_author': "Author: Zengkai001@qq.com",
-            'about_version': "Version: 0.0.2",
+            'about_version': "Version: ",
             'about_description': "A fast video downloader with proxy support for YouTube, Bilibili, and more",
 
             # Main UI
@@ -134,7 +134,7 @@ class Translator:
 
             # About section
             'about_author': "作者: Zengkai001@qq.com",
-            'about_version': "版本: 0.0.2",
+            'about_version': "版本: ",
             'about_description': "支持代理的快速视频下载器，支持YouTube、B站等",
 
             # Main UI
